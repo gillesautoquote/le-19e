@@ -25,6 +25,7 @@ import OSMParks from '@/organisms/OSMParks';
 import OSMPointFeatures from '@/organisms/OSMPointFeatures';
 import OSMAnimatedEntities from '@/organisms/OSMAnimatedEntities';
 import OSMPaths from '@/organisms/OSMPaths';
+import OSMQuayWalls from '@/organisms/OSMQuayWalls';
 
 // Reusable objects for ground click raycasting (avoid allocations)
 const _raycaster = new Raycaster();
@@ -104,6 +105,7 @@ export default function CanalOurcq() {
       {/* World */}
       <Quay />
       <Water waterways={osmData.waterways} />
+      <OSMQuayWalls waterways={osmData.waterways} />
 
       {/* OSM data → real geometry */}
       <OSMParks parks={osmData.parks} />

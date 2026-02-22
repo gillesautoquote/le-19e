@@ -6,32 +6,17 @@ import {
   BufferGeometry,
   Material,
   Group,
-  Color,
-  Float32BufferAttribute,
-  DoubleSide,
 } from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { useGLTF } from '@react-three/drei';
-import { EPOCH_A } from '@/constants/epochs';
-import { CROSSING_TILE, SIDEWALK_TILE } from '@/constants/kenneyRoads';
+import { ROAD_TILE, CROSSING_TILE, SIDEWALK_TILE } from '@/constants/kenneyRoads';
 import type { KenneyRoadTileDef } from '@/constants/kenneyRoads';
-import { computeRoadTiles } from '@/systems/roadTileSystem';
+import { computeRoadTiles, computeRoadSurfaceTiles } from '@/systems/roadTileSystem';
 import type { TileInstance } from '@/systems/roadTileSystem';
-import { roadToGeometry } from '@/systems/ribbonGeometry';
 import type { SceneRoad } from '@/types/osm';
 
 interface OSMRoadsProps {
   roads: SceneRoad[];
 }
-
-const VEHICLE_TYPES = new Set(['primary', 'secondary', 'tertiary', 'residential']);
-
-const ROAD_COLORS: Record<string, string> = {
-  primary: EPOCH_A.roadPrimary,
-  secondary: EPOCH_A.roadSecondary,
-  tertiary: EPOCH_A.roadTertiary,
-  residential: EPOCH_A.roadResidential,
-};
 
 const CROSSING_Y = 0.03;
 const SIDEWALK_Y = 0.0;
@@ -89,31 +74,10 @@ function TileLayer({ tileDef, instances, y }: TileLayerProps) {
 // ─── Main component ─────────────────────────────────────────────────
 
 export default memo(function OSMRoads({ roads }: OSMRoadsProps) {
-  const roadGeometry = useMemo(() => {
-    const geos: BufferGeometry[] = [];
-
-    for (const road of roads) {
-      if (!VEHICLE_TYPES.has(road.type)) continue;
-      if (road.points.length < 2) continue;
-
-      const { geometry } = roadToGeometry(road);
-      const hex = ROAD_COLORS[road.type] ?? EPOCH_A.roadResidential;
-      const color = new Color(hex);
-
-      const count = geometry.attributes.position.count;
-      const colors = new Float32Array(count * 3);
-      for (let j = 0; j < count * 3; j += 3) {
-        colors[j] = color.r;
-        colors[j + 1] = color.g;
-        colors[j + 2] = color.b;
-      }
-      geometry.setAttribute('color', new Float32BufferAttribute(colors, 3));
-      geos.push(geometry);
-    }
-
-    if (geos.length === 0) return null;
-    return mergeGeometries(geos, false);
-  }, [roads]);
+  const roadSurfaceTiles = useMemo(
+    () => computeRoadSurfaceTiles(roads),
+    [roads],
+  );
 
   const { crossingTiles, sidewalkTiles } = useMemo(
     () => computeRoadTiles(roads),
@@ -122,18 +86,7 @@ export default memo(function OSMRoads({ roads }: OSMRoadsProps) {
 
   return (
     <group>
-      {roadGeometry && (
-        <mesh geometry={roadGeometry} receiveShadow>
-          <meshLambertMaterial
-            vertexColors
-            flatShading
-            side={DoubleSide}
-            polygonOffset
-            polygonOffsetFactor={-3}
-            polygonOffsetUnits={-3}
-          />
-        </mesh>
-      )}
+      <TileLayer tileDef={ROAD_TILE} instances={roadSurfaceTiles} y={0} />
       <TileLayer tileDef={CROSSING_TILE} instances={crossingTiles} y={CROSSING_Y} />
       <TileLayer tileDef={SIDEWALK_TILE} instances={sidewalkTiles} y={SIDEWALK_Y} />
     </group>

@@ -141,3 +141,48 @@ export function computeRoadTiles(roads: SceneRoad[]): RoadTileResult {
 
   return { crossingTiles, sidewalkTiles };
 }
+
+// ─── Road surface tiles ─────────────────────────────────────────────
+
+/** Y offset for road surface tiles (just above terrain). */
+const ROAD_SURFACE_Y_OFFSET = 0.04;
+
+/**
+ * Compute Kenney tile instances for road surfaces (asphalt).
+ * Same polyline-sampling algorithm as crossings/sidewalks.
+ */
+export function computeRoadSurfaceTiles(roads: SceneRoad[]): TileInstance[] {
+  const tiles: TileInstance[] = [];
+
+  for (const road of roads) {
+    if (!VEHICLE_ROAD_TYPES.has(road.type)) continue;
+    if (road.points.length < 2) continue;
+
+    let accumulated = 0;
+
+    for (let i = 0; i < road.points.length - 1; i++) {
+      const seg = segmentFromPoints(road.points[i], road.points[i + 1]);
+      if (!seg) continue;
+
+      while (accumulated < seg.len) {
+        const t = accumulated / seg.len;
+        const px = seg.x1 + seg.dx * t;
+        const pz = seg.z1 + seg.dz * t;
+
+        tiles.push({
+          x: px,
+          y: getTerrainHeight(px, pz) + ROAD_SURFACE_Y_OFFSET,
+          z: pz,
+          rotationY: seg.angle,
+          scaleX: TILE_SPACING,
+          scaleZ: road.width,
+        });
+
+        accumulated += TILE_SPACING;
+      }
+      accumulated -= seg.len;
+    }
+  }
+
+  return tiles;
+}
