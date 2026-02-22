@@ -1,0 +1,323 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "canal-ourcq-main",
+        "waterway": "canal",
+        "name": "Canal de l'Ourcq"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [2.3580, 48.8837],
+          [2.3620, 48.8838],
+          [2.3660, 48.8838],
+          [2.3699, 48.8837],
+          [2.3740, 48.8836],
+          [2.3780, 48.8836],
+          [2.3820, 48.8835]
+        ]
+      }
+    },
+
+    {
+      "type": "Feature",
+      "properties": { "id": "bld-01", "building": "residential", "building:levels": "5", "name": "Résidence Ourcq" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [2.3610, 48.8845], [2.3615, 48.8845], [2.3615, 48.8848], [2.3610, 48.8848], [2.3610, 48.8845]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "bld-02", "building": "apartments", "building:levels": "7" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [2.3622, 48.8846], [2.3629, 48.8846], [2.3629, 48.8850], [2.3622, 48.8850], [2.3622, 48.8846]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "bld-03", "building": "commercial", "name": "MK2 Quai de Loire" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [2.3638, 48.8843], [2.3646, 48.8843], [2.3646, 48.8847], [2.3638, 48.8847], [2.3638, 48.8843]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "bld-04", "building": "residential", "building:levels": "4" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [2.3655, 48.8845], [2.3660, 48.8845], [2.3660, 48.8849], [2.3655, 48.8849], [2.3655, 48.8845]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "bld-05", "building": "residential", "building:levels": "6" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [2.3670, 48.8846], [2.3677, 48.8846], [2.3677, 48.8851], [2.3670, 48.8851], [2.3670, 48.8846]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "bld-06", "building": "apartments", "building:levels": "8" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [2.3688, 48.8844], [2.3694, 48.8844], [2.3694, 48.8849], [2.3688, 48.8849], [2.3688, 48.8844]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "bld-07", "building": "commercial", "building:levels": "3" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [2.3705, 48.8845], [2.3712, 48.8845], [2.3712, 48.8848], [2.3705, 48.8848], [2.3705, 48.8845]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "bld-08", "building": "residential", "building:levels": "5" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [2.3722, 48.8846], [2.3728, 48.8846], [2.3728, 48.8850], [2.3722, 48.8850], [2.3722, 48.8846]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "bld-09", "building": "residential", "building:levels": "6" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [2.3740, 48.8845], [2.3747, 48.8845], [2.3747, 48.8849], [2.3740, 48.8849], [2.3740, 48.8845]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "bld-10", "building": "apartments", "building:levels": "7", "name": "Résidence du Canal" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [2.3758, 48.8844], [2.3765, 48.8844], [2.3765, 48.8850], [2.3758, 48.8850], [2.3758, 48.8844]
+        ]]
+      }
+    },
+
+    {
+      "type": "Feature",
+      "properties": { "id": "bld-11", "building": "residential", "building:levels": "4" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [2.3612, 48.8826], [2.3618, 48.8826], [2.3618, 48.8830], [2.3612, 48.8830], [2.3612, 48.8826]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "bld-12", "building": "apartments", "building:levels": "6" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [2.3630, 48.8825], [2.3637, 48.8825], [2.3637, 48.8830], [2.3630, 48.8830], [2.3630, 48.8825]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "bld-13", "building": "commercial", "building:levels": "2", "name": "Point Ephémère" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [2.3648, 48.8827], [2.3656, 48.8827], [2.3656, 48.8831], [2.3648, 48.8831], [2.3648, 48.8827]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "bld-14", "building": "residential", "building:levels": "5" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [2.3665, 48.8824], [2.3672, 48.8824], [2.3672, 48.8829], [2.3665, 48.8829], [2.3665, 48.8824]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "bld-15", "building": "residential", "building:levels": "6" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [2.3685, 48.8825], [2.3691, 48.8825], [2.3691, 48.8830], [2.3685, 48.8830], [2.3685, 48.8825]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "bld-16", "building": "apartments", "building:levels": "7" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [2.3700, 48.8826], [2.3708, 48.8826], [2.3708, 48.8831], [2.3700, 48.8831], [2.3700, 48.8826]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "bld-17", "building": "industrial", "building:levels": "2", "name": "Magasins Généraux" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [2.3720, 48.8824], [2.3732, 48.8824], [2.3732, 48.8830], [2.3720, 48.8830], [2.3720, 48.8824]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "bld-18", "building": "residential", "building:levels": "5" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [2.3742, 48.8825], [2.3748, 48.8825], [2.3748, 48.8829], [2.3742, 48.8829], [2.3742, 48.8825]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "bld-19", "building": "residential", "building:levels": "4" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [2.3760, 48.8826], [2.3766, 48.8826], [2.3766, 48.8830], [2.3760, 48.8830], [2.3760, 48.8826]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "bld-20", "building": "commercial", "building:levels": "3", "name": "Café de l'Écluse" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [2.3776, 48.8825], [2.3782, 48.8825], [2.3782, 48.8829], [2.3776, 48.8829], [2.3776, 48.8825]
+        ]]
+      }
+    },
+
+    {
+      "type": "Feature",
+      "properties": { "id": "park-01", "leisure": "park", "name": "Jardin de l'Écluse des Morts" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [2.3640, 48.8852], [2.3658, 48.8852], [2.3658, 48.8860], [2.3640, 48.8860], [2.3640, 48.8852]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "park-02", "leisure": "park", "name": "Square de la Place de Bitche" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [2.3710, 48.8851], [2.3725, 48.8851], [2.3725, 48.8858], [2.3710, 48.8858], [2.3710, 48.8851]
+        ]]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "park-03", "leisure": "park", "name": "Jardin du Bassin de la Villette" },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [2.3770, 48.8818], [2.3790, 48.8818], [2.3790, 48.8824], [2.3770, 48.8824], [2.3770, 48.8818]
+        ]]
+      }
+    },
+
+    {
+      "type": "Feature",
+      "properties": { "id": "road-01", "highway": "secondary", "name": "Quai de la Loire" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [2.3580, 48.8842], [2.3620, 48.8843], [2.3660, 48.8843],
+          [2.3699, 48.8842], [2.3740, 48.8841], [2.3780, 48.8841], [2.3820, 48.8840]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "road-02", "highway": "secondary", "name": "Quai de la Marne" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [2.3580, 48.8832], [2.3620, 48.8832], [2.3660, 48.8832],
+          [2.3699, 48.8832], [2.3740, 48.8831], [2.3780, 48.8831], [2.3820, 48.8830]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "road-03", "highway": "tertiary", "name": "Rue de Crimée" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [2.3680, 48.8860], [2.3680, 48.8850], [2.3680, 48.8840],
+          [2.3680, 48.8837], [2.3680, 48.8830], [2.3680, 48.8820]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "road-04", "highway": "residential", "name": "Rue de Thionville" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [2.3645, 48.8855], [2.3645, 48.8848], [2.3645, 48.8842]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "road-05", "highway": "residential", "name": "Rue Petit" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [2.3720, 48.8855], [2.3720, 48.8848], [2.3720, 48.8842]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": { "id": "road-06", "highway": "primary", "name": "Avenue Jean Jaurès" },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [2.3760, 48.8860], [2.3770, 48.8850], [2.3780, 48.8840],
+          [2.3790, 48.8830], [2.3800, 48.8820]
+        ]
+      }
+    }
+  ]
+}

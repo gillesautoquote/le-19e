@@ -1,0 +1,139 @@
+import { useMemo, useLayoutEffect, useRef, useCallback, memo } from 'react';
+import {
+  Object3D,
+  Mesh,
+  InstancedMesh as InstancedMeshType,
+  BufferGeometry,
+  Material,
+  Group,
+} from 'three';
+import { useGLTF } from '@react-three/drei';
+import { hashString } from '@/utils/geoUtils';
+import { KENNEY_TREES } from '@/constants/kenneyTrees';
+import type { KenneyTreeDef } from '@/constants/kenneyTrees';
+import { getTerrainHeight } from '@/systems/terrainSystem';
+import type { SceneTree } from '@/types/osm';
+
+interface OSMTreesProps {
+  trees: SceneTree[];
+}
+
+interface MeshData {
+  geometry: BufferGeometry;
+  material: Material;
+}
+
+interface TreeInstance {
+  x: number;
+  z: number;
+  scale: number;
+  rotationY: number;
+}
+
+/** Extract ALL meshes from a GLB scene (multi-primitive support). */
+function extractAllMeshes(scene: Group): MeshData[] {
+  const results: MeshData[] = [];
+  scene.traverse((node: Object3D) => {
+    if ((node as Mesh).isMesh) {
+      const mesh = node as Mesh;
+      results.push({ geometry: mesh.geometry, material: mesh.material as Material });
+    }
+  });
+  return results;
+}
+
+// ─── Sub-component: one variant (multiple InstancedMesh) ───────────
+
+interface TreeVariantProps {
+  modelDef: KenneyTreeDef;
+  instances: TreeInstance[];
+}
+
+function TreeVariantInstances({ modelDef, instances }: TreeVariantProps) {
+  const { scene } = useGLTF(modelDef.path);
+  const meshes = useMemo(() => extractAllMeshes(scene), [scene]);
+  const refsMap = useRef<Map<number, InstancedMeshType>>(new Map());
+
+  const setRef = useCallback(
+    (idx: number) => (el: InstancedMeshType | null) => {
+      if (el) refsMap.current.set(idx, el);
+      else refsMap.current.delete(idx);
+    },
+    [],
+  );
+
+  useLayoutEffect(() => {
+    if (instances.length === 0) return;
+    const dummy = new Object3D();
+
+    for (const [, meshRef] of refsMap.current) {
+      for (let i = 0; i < instances.length; i++) {
+        const inst = instances[i];
+        dummy.position.set(inst.x, getTerrainHeight(inst.x, inst.z), inst.z);
+        dummy.scale.setScalar(inst.scale);
+        dummy.rotation.set(0, inst.rotationY, 0);
+        dummy.updateMatrix();
+        meshRef.setMatrixAt(i, dummy.matrix);
+      }
+      meshRef.instanceMatrix.needsUpdate = true;
+    }
+  }, [instances]);
+
+  if (meshes.length === 0 || instances.length === 0) return null;
+
+  return (
+    <>
+      {meshes.map((mesh, idx) => (
+        <instancedMesh
+          key={`${modelDef.key}-${idx}-${instances.length}`}
+          ref={setRef(idx)}
+          args={[mesh.geometry, mesh.material, instances.length]}
+          castShadow
+        />
+      ))}
+    </>
+  );
+}
+
+// ─── Main component ─────────────────────────────────────────────────
+
+export default memo(function OSMTrees({ trees }: OSMTreesProps) {
+  const grouped = useMemo(() => {
+    const groups = new Map<string, TreeInstance[]>();
+    for (const def of KENNEY_TREES) groups.set(def.key, []);
+
+    for (let i = 0; i < trees.length; i++) {
+      const tree = trees[i];
+      const variantIdx = hashString(tree.id ?? String(i)) % KENNEY_TREES.length;
+      const def = KENNEY_TREES[variantIdx];
+      const [x, z] = tree.position;
+      const h = tree.height || 8;
+      const scale = h / def.nativeHeight;
+
+      groups.get(def.key)!.push({
+        x,
+        z,
+        scale,
+        rotationY: i * 2.3998, // golden angle
+      });
+    }
+
+    return groups;
+  }, [trees]);
+
+  return (
+    <group>
+      {KENNEY_TREES.map((def) => {
+        const instances = grouped.get(def.key);
+        if (!instances || instances.length === 0) return null;
+        return (
+          <TreeVariantInstances
+            key={def.key}
+            modelDef={def}
+            instances={instances}
+          />
+        );
+      })}
+    </group>
+  );
+});
