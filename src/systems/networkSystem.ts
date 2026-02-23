@@ -42,13 +42,20 @@ function generateChatId(): string {
 
 // ─── Room event binding ─────────────────────────────────────────
 
-function syncState(state: Record<string, unknown>): void {
+function syncState(state: Record<string, unknown>, label: string): void {
   const store = useMultiplayerStore;
   const players = state.players as
     | { forEach: (cb: (p: Record<string, unknown>, k: string) => void) => void; size: number }
     | undefined;
 
-  if (!players || typeof players.forEach !== 'function') return;
+  // eslint-disable-next-line no-console
+  console.warn(`[net:${label}] syncState called — players type: ${typeof players}, forEach: ${typeof players?.forEach}, size: ${players?.size}`);
+
+  if (!players || typeof players.forEach !== 'function') {
+    // eslint-disable-next-line no-console
+    console.warn(`[net:${label}] BAIL — players not iterable. state keys:`, Object.keys(state));
+    return;
+  }
 
   // Sync player count
   const count = state.playerCount as number;
@@ -60,6 +67,8 @@ function syncState(state: Record<string, unknown>): void {
   const seenIds = new Set<string>();
   players.forEach((player: Record<string, unknown>, key: string) => {
     seenIds.add(key);
+    // eslint-disable-next-line no-console
+    console.warn(`[net:${label}] player ${key}: name=${player.name}, x=${player.x}, z=${player.z}`);
     store.getState().setRemotePlayer(key, {
       id: key,
       name: player.name as string,
@@ -70,6 +79,9 @@ function syncState(state: Record<string, unknown>): void {
       epoch: player.epoch as 'A' | 'B',
     });
   });
+
+  // eslint-disable-next-line no-console
+  console.warn(`[net:${label}] synced ${seenIds.size} players, count=${count}`);
 
   // Remove players that left
   for (const [id] of store.getState().remotePlayers) {
@@ -82,11 +94,18 @@ function syncState(state: Record<string, unknown>): void {
 function bindRoomEvents(r: Room): void {
   const chat = useChatStore;
 
+  // eslint-disable-next-line no-console
+  console.warn('[net] bindRoomEvents — state:', typeof r.state, 'keys:', r.state ? Object.keys(r.state as Record<string, unknown>) : 'null');
+  // eslint-disable-next-line no-console
+  console.warn('[net] state.players:', typeof (r.state as Record<string, unknown>)?.players);
+  // eslint-disable-next-line no-console
+  console.warn('[net] state raw:', JSON.stringify(r.state, null, 2)?.slice(0, 500));
+
   // State sync via onStateChange (most reliable in @colyseus/schema 2.x)
-  r.onStateChange((state: Record<string, unknown>) => syncState(state));
+  r.onStateChange((state: Record<string, unknown>) => syncState(state, 'change'));
 
   // Process initial state immediately (already received before binding)
-  syncState(r.state as unknown as Record<string, unknown>);
+  syncState(r.state as unknown as Record<string, unknown>, 'init');
 
   // Chat messages
   r.onMessage('chat', (data: {
@@ -170,7 +189,11 @@ function attemptReconnect(): void {
 
 async function connectToRoom(name: string): Promise<void> {
   if (!client) return;
+  // eslint-disable-next-line no-console
+  console.warn('[net] joining room "world"...');
   room = await client.joinOrCreate('world', { name });
+  // eslint-disable-next-line no-console
+  console.warn('[net] joined! sessionId:', room.sessionId, 'hasState:', !!room.state);
   useMultiplayerStore.getState().setLocalId(room.sessionId);
   bindRoomEvents(room);
   setStatus('connected');
