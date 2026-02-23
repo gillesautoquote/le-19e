@@ -1,8 +1,7 @@
 /**
  * networkSystem.ts — Singleton WebSocket network manager.
  *
- * State lives at module level (not Zustand) for zero re-render overhead.
- * Components call broadcastPosition() from useFrame.
+ * Uses message-based sync (not schema) for reliable player position updates.
  * Pattern: same as npcSystem.ts and inputSystem.ts.
  */
 import { Client, type Room } from 'colyseus.js';
@@ -40,43 +39,62 @@ function generateChatId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-// ─── Room event binding ─────────────────────────────────────────
+// ─── Room event binding (message-based, no schema sync) ─────────
 
 function bindRoomEvents(r: Room): void {
   const store = useMultiplayerStore;
   const chat = useChatStore;
 
-  // Player state changes (Colyseus schema callbacks)
-  r.state.players.onAdd((player: Record<string, unknown>, key: string) => {
-    store.getState().setRemotePlayer(key, {
-      id: key as string,
-      name: player.name as string,
-      x: player.x as number,
-      z: player.z as number,
-      rotation: player.rotation as number,
-      anim: player.anim as number,
-      epoch: player.epoch as 'A' | 'B',
+  // Player joined (new or existing)
+  r.onMessage('player_join', (data: {
+    id: string;
+    name: string;
+    x: number;
+    z: number;
+    rotation: number;
+    anim: number;
+    epoch: 'A' | 'B';
+  }) => {
+    store.getState().setRemotePlayer(data.id, {
+      id: data.id,
+      name: data.name,
+      x: data.x,
+      z: data.z,
+      rotation: data.rotation,
+      anim: data.anim,
+      epoch: data.epoch,
     });
-
-    // Listen for individual field changes
-    player.onChange = () => {
-      store.getState().setRemotePlayer(key, {
-        x: player.x as number,
-        z: player.z as number,
-        rotation: player.rotation as number,
-        anim: player.anim as number,
-        epoch: player.epoch as 'A' | 'B',
-      });
-    };
   });
 
-  r.state.players.onRemove((_player: unknown, key: string) => {
-    store.getState().removeRemotePlayer(key);
+  // Player position update
+  r.onMessage('player_update', (data: {
+    id: string;
+    x: number;
+    z: number;
+    rotation: number;
+    anim: number;
+  }) => {
+    store.getState().setRemotePlayer(data.id, {
+      x: data.x,
+      z: data.z,
+      rotation: data.rotation,
+      anim: data.anim,
+    });
+  });
+
+  // Player left
+  r.onMessage('player_leave', (data: { id: string }) => {
+    store.getState().removeRemotePlayer(data.id);
   });
 
   // Player count
-  r.state.listen('playerCount', (count: number) => {
-    store.getState().setPlayerCount(count);
+  r.onMessage('player_count', (data: { count: number }) => {
+    store.getState().setPlayerCount(data.count);
+  });
+
+  // Player epoch change
+  r.onMessage('player_epoch', (data: { id: string; epoch: 'A' | 'B' }) => {
+    store.getState().setRemotePlayer(data.id, { epoch: data.epoch });
   });
 
   // Chat messages
@@ -131,10 +149,7 @@ function bindRoomEvents(r: Room): void {
   });
 
   r.onError((code, message) => {
-    if (import.meta.env.DEV) {
-      // eslint-disable-next-line no-console
-      console.warn(`[network] Room error ${code}: ${message}`);
-    }
+    console.warn(`[network] Room error ${code}: ${message}`);
     setStatus('error');
   });
 }
@@ -210,7 +225,6 @@ export function broadcastPosition(
   const dx = x - lastX;
   const dz = z - lastZ;
   if (dx * dx + dz * dz < MULTIPLAYER.positionDeltaThreshold * MULTIPLAYER.positionDeltaThreshold) {
-    // Still send if anim changed (idle↔walk transition)
     return;
   }
 

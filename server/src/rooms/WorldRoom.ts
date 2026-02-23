@@ -30,6 +30,7 @@ export class WorldRoom extends Room<WorldState> {
 
   onCreate(): void {
     this.setState(new WorldState());
+    console.log('[WorldRoom] Room created');
 
     this.onMessage('position', (client: Client, data: PositionMessage) => {
       const player = this.state.players.get(client.sessionId);
@@ -41,6 +42,15 @@ export class WorldRoom extends Room<WorldState> {
       player.rotation = data.rotation;
       player.anim = data.anim;
       player.lastUpdate = Date.now();
+
+      // Broadcast position to all OTHER clients via message
+      this.broadcast('player_update', {
+        id: client.sessionId,
+        x: data.x,
+        z: data.z,
+        rotation: data.rotation,
+        anim: data.anim,
+      }, { except: client });
     });
 
     this.onMessage('chat', (client: Client, data: ChatMessage) => {
@@ -68,6 +78,10 @@ export class WorldRoom extends Room<WorldState> {
       if (!player) return;
       if (data.epoch === 'A' || data.epoch === 'B') {
         player.epoch = data.epoch;
+        this.broadcast('player_epoch', {
+          id: client.sessionId,
+          epoch: data.epoch,
+        }, { except: client });
       }
     });
   }
@@ -81,6 +95,37 @@ export class WorldRoom extends Room<WorldState> {
 
     this.state.players.set(client.sessionId, player);
     this.state.playerCount = this.state.players.size;
+
+    console.log(`[WorldRoom] ${player.name} joined (${this.state.players.size} players)`);
+
+    // Send existing players to the new client
+    this.state.players.forEach((p, key) => {
+      if (key !== client.sessionId) {
+        client.send('player_join', {
+          id: key,
+          name: p.name,
+          x: p.x,
+          z: p.z,
+          rotation: p.rotation,
+          anim: p.anim,
+          epoch: p.epoch,
+        });
+      }
+    });
+
+    // Notify everyone about the new player
+    this.broadcast('player_join', {
+      id: client.sessionId,
+      name: player.name,
+      x: player.x,
+      z: player.z,
+      rotation: player.rotation,
+      anim: player.anim,
+      epoch: player.epoch,
+    }, { except: client });
+
+    // Send player count to all
+    this.broadcast('player_count', { count: this.state.players.size });
 
     this.broadcast('system', {
       type: 'join',
@@ -97,6 +142,14 @@ export class WorldRoom extends Room<WorldState> {
     this.state.players.delete(client.sessionId);
     this.state.playerCount = this.state.players.size;
     rateLimitCleanup(client.sessionId);
+
+    console.log(`[WorldRoom] ${name} left (${this.state.players.size} players)`);
+
+    // Notify all clients to remove this player
+    this.broadcast('player_leave', { id: client.sessionId });
+
+    // Send updated player count
+    this.broadcast('player_count', { count: this.state.players.size });
 
     this.broadcast('system', {
       type: 'leave',
