@@ -4,6 +4,11 @@
  * State lives at module level (not Zustand) for zero re-render overhead.
  * Components call broadcastPosition() from useFrame.
  * Pattern: same as npcSystem.ts and inputSystem.ts.
+ *
+ * Sync strategy: message-based (not Schema auto-sync).
+ * The server uses Schema internally for state management, but communicates
+ * with clients via explicit messages. This is more reliable across bundlers
+ * and easier to debug than binary Schema patches.
  */
 import { Client, type Room } from 'colyseus.js';
 import { MULTIPLAYER } from '@/constants/multiplayer';
@@ -40,90 +45,80 @@ function generateChatId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+// ─── Message types from server ──────────────────────────────────
+
+interface PlayerAddMsg {
+  id: string;
+  name: string;
+  x: number;
+  z: number;
+  rotation: number;
+  anim: number;
+  epoch: 'A' | 'B';
+}
+
+interface PlayerMoveMsg {
+  id: string;
+  x: number;
+  z: number;
+  rotation: number;
+  anim: number;
+}
+
+interface PlayerRemoveMsg {
+  id: string;
+}
+
+interface PlayerCountMsg {
+  count: number;
+}
+
+interface PlayerEpochMsg {
+  id: string;
+  epoch: 'A' | 'B';
+}
+
 // ─── Room event binding ─────────────────────────────────────────
 
-function syncState(state: Record<string, unknown>, label: string): void {
+function bindRoomEvents(r: Room): void {
   const store = useMultiplayerStore;
-  const players = state.players as
-    | { forEach: (cb: (p: Record<string, unknown>, k: string) => void) => void; size: number }
-    | undefined;
+  const chat = useChatStore;
 
-  // eslint-disable-next-line no-console
-  console.warn(`[net:${label}] syncState called — players type: ${typeof players}, forEach: ${typeof players?.forEach}, size: ${players?.size}`);
-
-  if (!players || typeof players.forEach !== 'function') {
-    // eslint-disable-next-line no-console
-    console.warn(`[net:${label}] BAIL — players not iterable. state keys:`, Object.keys(state));
-    return;
-  }
-
-  // Sync player count
-  const count = state.playerCount as number;
-  if (typeof count === 'number') {
-    store.getState().setPlayerCount(count);
-  }
-
-  // Sync all players
-  const seenIds = new Set<string>();
-  players.forEach((player: Record<string, unknown>, key: string) => {
-    seenIds.add(key);
-    // eslint-disable-next-line no-console
-    console.warn(`[net:${label}] player ${key}: name=${player.name}, x=${player.x}, z=${player.z}`);
-    store.getState().setRemotePlayer(key, {
-      id: key,
-      name: player.name as string,
-      x: player.x as number,
-      z: player.z as number,
-      rotation: player.rotation as number,
-      anim: player.anim as number,
-      epoch: player.epoch as 'A' | 'B',
+  // Player sync via explicit messages
+  r.onMessage('player_add', (data: PlayerAddMsg) => {
+    store.getState().setRemotePlayer(data.id, {
+      id: data.id,
+      name: data.name,
+      x: data.x,
+      z: data.z,
+      rotation: data.rotation,
+      anim: data.anim,
+      epoch: data.epoch,
     });
   });
 
-  // eslint-disable-next-line no-console
-  console.warn(`[net:${label}] synced ${seenIds.size} players, count=${count}`);
-
-  // Remove players that left
-  for (const [id] of store.getState().remotePlayers) {
-    if (!seenIds.has(id)) {
-      store.getState().removeRemotePlayer(id);
-    }
-  }
-}
-
-function bindRoomEvents(r: Room): void {
-  const chat = useChatStore;
-
-  const st = r.state as Record<string, unknown>;
-  const pl = st.players as Record<string, unknown>;
-  // eslint-disable-next-line no-console
-  console.warn('[net] state keys:', Object.keys(st));
-  // eslint-disable-next-line no-console
-  console.warn('[net] playerCount value:', st.playerCount, 'type:', typeof st.playerCount);
-  // eslint-disable-next-line no-console
-  console.warn('[net] players constructor:', pl?.constructor?.name);
-  // eslint-disable-next-line no-console
-  console.warn('[net] players.$items:', (pl as Record<string, unknown>)?.$items);
-  // eslint-disable-next-line no-console
-  console.warn('[net] players.$indexes:', (pl as Record<string, unknown>)?.$indexes);
-  // eslint-disable-next-line no-console
-  console.warn('[net] players own keys:', Object.getOwnPropertyNames(pl));
-  // eslint-disable-next-line no-console
-  try { console.warn('[net] players spread:', [...pl as Iterable<unknown>]); } catch (e) { console.warn('[net] players not iterable:', e); }
-  // eslint-disable-next-line no-console
-  console.warn('[net] state JSON:', JSON.stringify(r.state)?.slice(0, 500));
-
-  // State sync via onStateChange (most reliable in @colyseus/schema 2.x)
-  r.onStateChange((state: Record<string, unknown>) => {
-    // eslint-disable-next-line no-console
-    console.warn('[net:change] playerCount:', (state as Record<string, unknown>).playerCount);
-    // eslint-disable-next-line no-console
-    console.warn('[net:change] players.$items size:', ((state as Record<string, unknown>).players as Record<string, unknown>)?.$items);
-    syncState(state, 'change');
+  r.onMessage('player_move', (data: PlayerMoveMsg) => {
+    store.getState().setRemotePlayer(data.id, {
+      x: data.x,
+      z: data.z,
+      rotation: data.rotation,
+      anim: data.anim,
+    });
   });
 
-  // Process initial state immediately (already received before binding)
-  syncState(r.state as unknown as Record<string, unknown>, 'init');
+  r.onMessage('player_remove', (data: PlayerRemoveMsg) => {
+    store.getState().removeRemotePlayer(data.id);
+  });
+
+  r.onMessage('player_count', (data: PlayerCountMsg) => {
+    store.getState().setPlayerCount(data.count);
+  });
+
+  r.onMessage('player_epoch', (data: PlayerEpochMsg) => {
+    store.getState().setRemotePlayer(data.id, {
+      epoch: data.epoch,
+    });
+  });
 
   // Chat messages
   r.onMessage('chat', (data: {
@@ -207,11 +202,7 @@ function attemptReconnect(): void {
 
 async function connectToRoom(name: string): Promise<void> {
   if (!client) return;
-  // eslint-disable-next-line no-console
-  console.warn('[net] joining room "world"...');
   room = await client.joinOrCreate('world', { name });
-  // eslint-disable-next-line no-console
-  console.warn('[net] joined! sessionId:', room.sessionId, 'hasState:', !!room.state);
   useMultiplayerStore.getState().setLocalId(room.sessionId);
   bindRoomEvents(room);
   setStatus('connected');
