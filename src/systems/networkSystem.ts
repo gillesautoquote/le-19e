@@ -94,15 +94,33 @@ function syncState(state: Record<string, unknown>, label: string): void {
 function bindRoomEvents(r: Room): void {
   const chat = useChatStore;
 
+  const st = r.state as Record<string, unknown>;
+  const pl = st.players as Record<string, unknown>;
   // eslint-disable-next-line no-console
-  console.warn('[net] bindRoomEvents — state:', typeof r.state, 'keys:', r.state ? Object.keys(r.state as Record<string, unknown>) : 'null');
+  console.warn('[net] state keys:', Object.keys(st));
   // eslint-disable-next-line no-console
-  console.warn('[net] state.players:', typeof (r.state as Record<string, unknown>)?.players);
+  console.warn('[net] playerCount value:', st.playerCount, 'type:', typeof st.playerCount);
   // eslint-disable-next-line no-console
-  console.warn('[net] state raw:', JSON.stringify(r.state, null, 2)?.slice(0, 500));
+  console.warn('[net] players constructor:', pl?.constructor?.name);
+  // eslint-disable-next-line no-console
+  console.warn('[net] players.$items:', (pl as Record<string, unknown>)?.$items);
+  // eslint-disable-next-line no-console
+  console.warn('[net] players.$indexes:', (pl as Record<string, unknown>)?.$indexes);
+  // eslint-disable-next-line no-console
+  console.warn('[net] players own keys:', Object.getOwnPropertyNames(pl));
+  // eslint-disable-next-line no-console
+  try { console.warn('[net] players spread:', [...pl as Iterable<unknown>]); } catch (e) { console.warn('[net] players not iterable:', e); }
+  // eslint-disable-next-line no-console
+  console.warn('[net] state JSON:', JSON.stringify(r.state)?.slice(0, 500));
 
   // State sync via onStateChange (most reliable in @colyseus/schema 2.x)
-  r.onStateChange((state: Record<string, unknown>) => syncState(state, 'change'));
+  r.onStateChange((state: Record<string, unknown>) => {
+    // eslint-disable-next-line no-console
+    console.warn('[net:change] playerCount:', (state as Record<string, unknown>).playerCount);
+    // eslint-disable-next-line no-console
+    console.warn('[net:change] players.$items size:', ((state as Record<string, unknown>).players as Record<string, unknown>)?.$items);
+    syncState(state, 'change');
+  });
 
   // Process initial state immediately (already received before binding)
   syncState(r.state as unknown as Record<string, unknown>, 'init');

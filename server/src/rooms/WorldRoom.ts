@@ -82,6 +82,9 @@ export class WorldRoom extends Room<WorldState> {
     this.state.players.set(client.sessionId, player);
     this.state.playerCount = this.state.players.size;
 
+    // eslint-disable-next-line no-console
+    console.log(`[server] onJoin ${client.sessionId} name="${player.name}" players.size=${this.state.players.size} playerCount=${this.state.playerCount}`);
+
     this.broadcast('system', {
       type: 'join',
       playerId: client.sessionId,
