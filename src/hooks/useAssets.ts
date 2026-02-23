@@ -1,6 +1,5 @@
 import { Component, ReactNode } from 'react';
 import { useGLTF, useProgress } from '@react-three/drei';
-import { ALL_KENNEY_BUILDINGS } from '@/constants/kenneyBuildings';
 import { KENNEY_TREES } from '@/constants/kenneyTrees';
 import { KENNEY_CARS } from '@/constants/kenneyCars';
 import { ALL_ROAD_TILES } from '@/constants/kenneyRoads';
@@ -31,9 +30,6 @@ export const MODEL_PATHS = {
 // Preload all models at module level
 Object.values(MODEL_PATHS).forEach((path) => {
   useGLTF.preload(path);
-});
-ALL_KENNEY_BUILDINGS.forEach((def) => {
-  useGLTF.preload(def.path);
 });
 KENNEY_TREES.forEach((def) => {
   useGLTF.preload(def.path);

@@ -5,14 +5,10 @@ import type {
   SceneBusStop, SceneTrafficLight, SceneShop, SceneBarge,
   SceneLock, SceneWasteBin, SceneTree,
 } from '@/types/osm';
-import { buildingToGeometry } from '@/systems/buildingGeometry';
-import type { BuildingGeometryResult } from '@/systems/buildingGeometry';
 import { waterwayToGeometry, roadToGeometry } from '@/systems/ribbonGeometry';
 import type { WaterwayGeometryResult, RoadGeometryResult } from '@/systems/ribbonGeometry';
 
-// Re-export everything from the split modules so existing imports keep working
-export { buildingToGeometry } from '@/systems/buildingGeometry';
-export type { BuildingGeometryResult } from '@/systems/buildingGeometry';
+// Re-export from split modules so existing imports keep working
 export { waterwayToGeometry, roadToGeometry } from '@/systems/ribbonGeometry';
 export type { WaterwayGeometryResult, RoadGeometryResult } from '@/systems/ribbonGeometry';
 
@@ -70,7 +66,6 @@ export function parkToGeometry(park: ScenePark): ParkGeometryResult {
 // ─── Full scene generation ───────────────────────────────────────
 
 export interface GeneratedScene {
-  buildings: BuildingGeometryResult[];
   waterways: WaterwayGeometryResult[];
   roads: RoadGeometryResult[];
   parks: ParkGeometryResult[];
@@ -90,13 +85,12 @@ export interface GeneratedScene {
 
 /**
  * Generate all Three.js geometries from parsed scene objects.
- * This is the main entry point called by components.
+ * Buildings are handled separately by OSMBuildings (merged ExtrudeGeometry).
  * Polygon/line features get converted to geometries.
  * Point features are passed through for atoms to render.
  */
 export function generateSceneObjects(sceneObjects: SceneObjects): GeneratedScene {
   return {
-    buildings: sceneObjects.buildings.map(buildingToGeometry),
     waterways: sceneObjects.water.map(waterwayToGeometry),
     roads: sceneObjects.roads.map(roadToGeometry),
     parks: sceneObjects.parks.map(parkToGeometry),
