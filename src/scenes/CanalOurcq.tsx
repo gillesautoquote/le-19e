@@ -26,6 +26,7 @@ import OSMPointFeatures from '@/organisms/OSMPointFeatures';
 import OSMAnimatedEntities from '@/organisms/OSMAnimatedEntities';
 import OSMPaths from '@/organisms/OSMPaths';
 import OSMQuayWalls from '@/organisms/OSMQuayWalls';
+import RemotePlayers from '@/organisms/RemotePlayers';
 
 // Reusable objects for ground click raycasting (avoid allocations)
 const _raycaster = new Raycaster();
@@ -82,8 +83,9 @@ export default function CanalOurcq() {
       const hit = _raycaster.ray.intersectPlane(_groundPlane, _hitPoint);
       if (hit) {
         const { x, z } = _hitPoint;
-        usePlayerStore.getState().setTargetPosition([x, 0, z]);
-        clickIndicatorRef.current = { position: [x, getTerrainHeight(x, z) + 0.05, z], time: Date.now() };
+        const terrainY = getTerrainHeight(x, z);
+        usePlayerStore.getState().setTargetPosition([x, terrainY, z]);
+        clickIndicatorRef.current = { position: [x, terrainY + 0.05, z], time: Date.now() };
       }
     };
 
@@ -129,6 +131,7 @@ export default function CanalOurcq() {
       {/* Player */}
       <Player />
       <ClickIndicator indicatorRef={clickIndicatorRef} />
+      <RemotePlayers />
 
       {/* Camera */}
       <CameraRig />

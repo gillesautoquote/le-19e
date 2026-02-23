@@ -6,7 +6,9 @@ import { PLAYER } from '@/constants/player';
 import { usePlayerStore } from '@/store/playerStore';
 import { useCameraStore } from '@/store/cameraStore';
 import { updatePlayerMovement, computeKeyboardMovement } from '@/systems/playerSystem';
-import { getKeys } from '@/systems/inputSystem';
+import { getKeys, isChatFocused } from '@/systems/inputSystem';
+import { getTerrainHeight, isHeightmapLoaded } from '@/systems/terrainSystem';
+import { broadcastPosition } from '@/systems/networkSystem';
 import { ModelErrorBoundary } from '@/hooks/useAssets';
 import MixamoCharacter from '@/atoms/MixamoCharacter';
 
@@ -39,10 +41,26 @@ export default function Player() {
   const groupRef = useRef<Group>(null);
   const walkTimeRef = useRef(0);
   const movingRef = useRef(false);
+  const terrainInitRef = useRef(false);
   const store = usePlayerStore;
 
   useFrame((_, delta) => {
     if (!groupRef.current) return;
+
+    // Snap to terrain height once heightmap is available
+    if (!terrainInitRef.current && isHeightmapLoaded()) {
+      terrainInitRef.current = true;
+      const pos = groupRef.current.position;
+      const y = getTerrainHeight(pos.x, pos.z);
+      pos.y = y;
+      store.setState({ position: [pos.x, y, pos.z] });
+    }
+
+    // Skip movement input when chat is focused
+    if (isChatFocused()) {
+      movingRef.current = false;
+      return;
+    }
 
     const keys = getKeys();
     const turbo = keys.has('shift');
@@ -68,6 +86,7 @@ export default function Player() {
         position: [kbMove.x, kbMove.y, kbMove.z],
         rotation: kbMove.rotation,
       });
+      broadcastPosition(kbMove.x, kbMove.z, kbMove.rotation, 1);
       return;
     }
 
@@ -102,6 +121,7 @@ export default function Player() {
       position: [result.x, result.y, result.z],
       rotation: result.rotation,
     });
+    broadcastPosition(result.x, result.z, result.rotation, result.arrived ? 0 : 1);
 
     if (result.arrived) {
       store.getState().stopMovement();

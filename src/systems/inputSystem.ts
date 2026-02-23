@@ -5,6 +5,7 @@
 
 const pressedKeys = new Set<string>();
 let initialized = false;
+let chatFocused = false;
 
 function onKeyDown(e: KeyboardEvent): void {
   // Prevent page scroll when arrow keys are used for movement
@@ -34,4 +35,13 @@ export function disposeInput(): void {
 
 export function getKeys(): Set<string> {
   return pressedKeys;
+}
+
+export function setChatFocused(focused: boolean): void {
+  chatFocused = focused;
+  if (focused) pressedKeys.clear();
+}
+
+export function isChatFocused(): boolean {
+  return chatFocused;
 }

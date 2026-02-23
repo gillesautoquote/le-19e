@@ -80,6 +80,24 @@ export const EPOCH_A = {
   // Text labels (3D billboards)
   labelText: '#1A1A1A',
   labelOutline: '#FFFFFF',
+
+  // Multiplayer — remote player body colors (8 variants)
+  remoteBodyA: '#E67E22',
+  remoteBodyB: '#9B59B6',
+  remoteBodyC: '#1ABC9C',
+  remoteBodyD: '#E74C3C',
+  remoteBodyE: '#2ECC71',
+  remoteBodyF: '#F39C12',
+  remoteBodyG: '#3498DB',
+  remoteBodyH: '#E84393',
+  remoteHead: '#F5CBA7',
+  remoteLegs: '#34495E',
+
+  // Multiplayer — chat & minimap
+  chatBubbleBg: '#FFFFFF',
+  chatBubbleText: '#1A1A1A',
+  chatBubbleBorder: '#E0D8C8',
+  minimapRemote: '#E67E22',
 } as const;
 
 // Epoch B — Paris post-apo (froid, désaturé)
@@ -164,6 +182,24 @@ export const EPOCH_B = {
   // Text labels (3D billboards)
   labelText: '#3A3A3A',
   labelOutline: '#CCCCCC',
+
+  // Multiplayer — remote player body colors (8 variants, desaturated)
+  remoteBodyA: '#8A5A1A',
+  remoteBodyB: '#5A3A6A',
+  remoteBodyC: '#1A6A5A',
+  remoteBodyD: '#8A3A3A',
+  remoteBodyE: '#2A6A41',
+  remoteBodyF: '#8A6A1A',
+  remoteBodyG: '#2A5A7A',
+  remoteBodyH: '#8A3A5A',
+  remoteHead: '#C8A882',
+  remoteLegs: '#1A2830',
+
+  // Multiplayer — chat & minimap
+  chatBubbleBg: '#3A3A35',
+  chatBubbleText: '#C8C8C0',
+  chatBubbleBorder: '#5A5A50',
+  minimapRemote: '#8A5A1A',
 } as const;
 
 export type EpochPalette = typeof EPOCH_A;
