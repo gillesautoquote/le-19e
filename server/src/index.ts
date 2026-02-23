@@ -2,7 +2,7 @@ import { Server } from 'colyseus';
 import { WebSocketTransport } from '@colyseus/ws-transport';
 import express from 'express';
 import { createServer } from 'http';
-import { WorldRoom } from './rooms/WorldRoom.js';
+import { WorldRoom } from './rooms/WorldRoom';
 
 const PORT = Number(process.env.PORT) || 2567;
 

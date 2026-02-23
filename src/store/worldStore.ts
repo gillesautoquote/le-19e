@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { sendEpoch } from '@/systems/networkSystem';
 
 interface WorldStore {
   epoch: 'A' | 'B';
@@ -13,5 +14,8 @@ export const useWorldStore = create<WorldStore>((set) => ({
   isStarted: false,
 
   start: () => set({ isStarted: true }),
-  setEpoch: (epoch) => set({ epoch }),
+  setEpoch: (epoch) => {
+    set({ epoch });
+    sendEpoch(epoch);
+  },
 }));

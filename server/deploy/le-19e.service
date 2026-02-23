@@ -1,0 +1,15 @@
+[Unit]
+Description=Le 19e Game Server
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/le-19e
+ExecStart=/usr/bin/node dist/index.js
+Restart=always
+RestartSec=5
+Environment=PORT=2567
+Environment=NODE_ENV=production
+
+[Install]
+WantedBy=multi-user.target

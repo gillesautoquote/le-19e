@@ -105,7 +105,7 @@ export default function CanalOurcq() {
       <PostProcessing />
 
       {/* World */}
-      <Quay />
+      <Quay waterways={osmData.waterways} />
       <Water waterways={osmData.waterways} />
       <OSMQuayWalls waterways={osmData.waterways} />
 

@@ -1,13 +1,12 @@
 /**
  * quayGeometry.ts — Build vertical quay wall geometry along waterway edges.
  *
- * Creates stone walls from water surface (WORLD.waterY) up to terrain height
- * on both sides of each waterway.
+ * Creates stone walls from terrain height at bank edge down to below the
+ * water surface, on both sides of each waterway.
  */
 
 import { BufferGeometry, Float32BufferAttribute } from 'three';
 import { getTerrainHeight } from '@/systems/terrainSystem';
-import { WORLD } from '@/constants/world';
 import type { SceneWater } from '@/types/osm';
 
 /** Max distance between edge subdivision points (meters). */
@@ -15,6 +14,9 @@ const EDGE_SUBDIVIDE = 10;
 
 /** Minimum wall height to create geometry (meters). */
 const MIN_WALL_HEIGHT = 0.1;
+
+/** Depth of wall below bank terrain level (meters). */
+const WALL_DEPTH = 3;
 
 // ─── Edge polyline computation ──────────────────────────────────────
 
@@ -93,7 +95,7 @@ function subdivideEdge(edge: EdgePoint[]): EdgePoint[] {
 
 /**
  * Build vertical wall quads along one edge polyline.
- * Bottom at WORLD.waterY, top at terrain height.
+ * Top at terrain height, bottom at terrain height minus WALL_DEPTH.
  */
 function buildWallStrip(
   edge: EdgePoint[],
@@ -101,12 +103,12 @@ function buildWallStrip(
   indices: number[],
   baseIndex: number,
 ): number {
-  const botY = WORLD.waterY;
   let idx = baseIndex;
 
   for (let i = 0; i < edge.length; i++) {
     const { x, z } = edge[i];
     const topY = getTerrainHeight(x, z);
+    const botY = topY - WALL_DEPTH;
 
     // Top vertex, then bottom vertex
     verts.push(x, topY, z);
@@ -115,9 +117,7 @@ function buildWallStrip(
     if (i > 0) {
       const prev = idx - 2;
       const curr = idx;
-      // Only create quad if wall is tall enough at either end
-      const prevTopY = verts[prev * 3 + 1];
-      if (prevTopY - botY > MIN_WALL_HEIGHT || topY - botY > MIN_WALL_HEIGHT) {
+      if (WALL_DEPTH > MIN_WALL_HEIGHT) {
         indices.push(prev, prev + 1, curr);
         indices.push(prev + 1, curr + 1, curr);
       }

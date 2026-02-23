@@ -1,6 +1,8 @@
 import { EPOCH_A } from '@/constants/epochs';
 import { WORLD } from '@/constants/world';
+import { MULTIPLAYER } from '@/constants/multiplayer';
 import { drawPlayerIndicators } from '@/ui/minimapPlayerDraw';
+import { useMultiplayerStore } from '@/store/multiplayerStore';
 import type { SceneObjects } from '@/types/osm';
 
 export const MINIMAP_SIZE = 180;
@@ -110,6 +112,18 @@ export function drawMinimap(ctx: CanvasRenderingContext2D, data: MinimapDrawData
       ctx.lineTo(rbp.x, rbp.y);
     }
     ctx.closePath();
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // Remote players (drawn inside rotated context so they rotate with map)
+  const remotePlayers = useMultiplayerStore.getState().remotePlayers;
+  ctx.fillStyle = EPOCH_A.minimapRemote;
+  ctx.globalAlpha = 0.8;
+  for (const [, player] of remotePlayers) {
+    const rp = worldToMinimap(player.x, player.z);
+    ctx.beginPath();
+    ctx.arc(rp.x, rp.y, MULTIPLAYER.minimapDotRadius, 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.globalAlpha = 1;

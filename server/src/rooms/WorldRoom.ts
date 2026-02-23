@@ -1,6 +1,6 @@
 import { Room, type Client } from 'colyseus';
-import { WorldState, PlayerState } from '../schema/GameState.js';
-import { validateMovement, rateLimitOk, rateLimitCleanup, sanitize } from '../validation/movement.js';
+import { WorldState, PlayerState } from '../schema/GameState';
+import { validateMovement, rateLimitOk, rateLimitCleanup, sanitize } from '../validation/movement';
 
 const NAME_MAX_LENGTH = 20;
 const CHAT_MAX_LENGTH = 200;

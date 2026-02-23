@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import { usePlayerStore } from '@/store/playerStore';
 import { useStreamingStore } from '@/store/streamingStore';
+import { useMultiplayerStore } from '@/store/multiplayerStore';
 import { sceneToGps } from '@/utils/geoUtils';
+
+const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:2567';
 
 const STYLE: React.CSSProperties = {
   position: 'absolute',
@@ -32,6 +35,8 @@ export default function DebugOverlay() {
       const tileCount = store.tileData.size;
       const merged = store.merged;
 
+      const mp = useMultiplayerStore.getState();
+
       const lines = [
         `pos  x=${x.toFixed(0)}  z=${z.toFixed(0)}`,
         `gps  ${lat.toFixed(5)}, ${lng.toFixed(5)}`,
@@ -40,6 +45,12 @@ export default function DebugOverlay() {
         `water ${merged.water.length}  park ${merged.parks.length}`,
         `tree ${merged.trees.length}  lamp ${merged.lamps.length}`,
         `shop ${merged.shops.length}  bench ${merged.benches.length}`,
+        `--- multiplayer ---`,
+        `net  ${mp.connectionStatus}`,
+        `id   ${mp.localId || '—'}`,
+        `name ${mp.localName || '—'}`,
+        `players ${mp.playerCount}  remote ${mp.remotePlayers.size}`,
+        `ws   ${WS_URL}`,
       ];
 
       if (store.error) lines.push(`ERR: ${store.error}`);

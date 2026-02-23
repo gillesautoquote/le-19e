@@ -10,18 +10,25 @@ import {
 } from 'three';
 import { EPOCH_A } from '@/constants/epochs';
 import type { HeightmapMeta } from '@/systems/terrainSystem';
+import type { SceneWater } from '@/types/osm';
+
+/** Depth to carve below the DEM surface for waterway beds (meters). */
+const CANAL_BED_DEPTH = 2;
 
 /**
  * Build a terrain BufferGeometry by sampling the heightmap grid.
+ * Optionally depresses vertices under waterway areas to create canal beds.
  *
  * @param heightData - Raw Float32Array of elevations
  * @param meta       - Heightmap metadata (cols, rows, cellSize, origin, etc.)
  * @param meshCell   - Spacing between terrain mesh vertices (in meters)
+ * @param waterways  - Optional waterway data for canal bed depression
  */
 export function buildTerrainGeometry(
   heightData: Float32Array,
   meta: HeightmapMeta,
   meshCell: number,
+  waterways?: SceneWater[],
 ): BufferGeometry {
   // Determine mesh grid dimensions from heightmap bounds
   const widthM = (meta.cols - 1) * meta.cellSize;
@@ -52,12 +59,16 @@ export function buildTerrainGeometry(
       // Sample height via bilinear interpolation on the data grid
       const y = sampleHeightmap(heightData, meta, sx, sz);
 
+      // Depress terrain under waterways to create canal beds
+      const depression = waterways ? getWaterwayDepression(sx, sz, waterways) : 0;
+
       positions[i3] = sx;
-      positions[i3 + 1] = y;
+      positions[i3 + 1] = y - depression;
       positions[i3 + 2] = sz;
 
       // Vertex color: blend ground → terrainHigh based on elevation
-      const t = Math.max(0, Math.min(1, (y - meta.minElevation) / elevRange));
+      const colorY = depression > 0 ? y : y; // Use un-depressed for color
+      const t = Math.max(0, Math.min(1, (colorY - meta.minElevation) / elevRange));
       tmpColor.copy(groundColor).lerp(highColor, t);
       colors[i3] = tmpColor.r;
       colors[i3 + 1] = tmpColor.g;
@@ -83,6 +94,46 @@ export function buildTerrainGeometry(
   geo.setIndex(indices);
   geo.computeVertexNormals();
   return geo;
+}
+
+// ─── Waterway depression ─────────────────────────────────────────
+
+/** Squared distance from point (px,pz) to line segment (ax,az)→(bx,bz). */
+function ptSegDistSq(
+  px: number, pz: number,
+  ax: number, az: number,
+  bx: number, bz: number,
+): number {
+  const dx = bx - ax;
+  const dz = bz - az;
+  const lenSq = dx * dx + dz * dz;
+  if (lenSq < 0.001) return (px - ax) ** 2 + (pz - az) ** 2;
+  const t = Math.max(0, Math.min(1, ((px - ax) * dx + (pz - az) * dz) / lenSq));
+  const cx = ax + t * dx;
+  const cz = az + t * dz;
+  return (px - cx) ** 2 + (pz - cz) ** 2;
+}
+
+/**
+ * Check if a point is within any waterway and return the depression depth.
+ * Returns 0 if the point is outside all waterways.
+ */
+function getWaterwayDepression(
+  sx: number,
+  sz: number,
+  waterways: SceneWater[],
+): number {
+  for (const ww of waterways) {
+    const halfW = ww.width / 2;
+    const halfWSq = halfW * halfW;
+    const pts = ww.points;
+    for (let i = 0; i < pts.length - 1; i++) {
+      if (ptSegDistSq(sx, sz, pts[i][0], pts[i][1], pts[i + 1][0], pts[i + 1][1]) < halfWSq) {
+        return CANAL_BED_DEPTH;
+      }
+    }
+  }
+  return 0;
 }
 
 // ─── Helper ──────────────────────────────────────────────────────

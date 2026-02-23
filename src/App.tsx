@@ -3,16 +3,21 @@ import { Canvas } from '@react-three/fiber';
 import { PCFSoftShadowMap } from 'three';
 import { useWorldStore } from '@/store/worldStore';
 import { initAudio } from '@/systems/audioSystem';
+import { initNetwork } from '@/systems/networkSystem';
 import { CAMERA } from '@/constants/world';
 import '@/styles/ui.css';
 
 import CanalOurcq from '@/scenes/CanalOurcq';
 import LoadingScreen from '@/ui/LoadingScreen';
 import MainMenu from '@/ui/MainMenu';
+import NamePrompt from '@/ui/NamePrompt';
 import Minimap from '@/ui/Minimap';
 import MuteButton from '@/ui/MuteButton';
 import EpochIndicator from '@/ui/EpochIndicator';
 import DebugOverlay from '@/ui/DebugOverlay';
+import ChatBox from '@/ui/ChatBox';
+import PlayerCount from '@/ui/PlayerCount';
+import ConnectionStatus from '@/ui/ConnectionStatus';
 
 export default function App() {
   const isStarted = useWorldStore((s) => s.isStarted);
@@ -20,6 +25,7 @@ export default function App() {
   const [loadProgress, setLoadProgress] = useState(0);
   const [isLoaded, setIsLoaded] = useState(false);
   const [showLoading, setShowLoading] = useState(true);
+  const [showNamePrompt, setShowNamePrompt] = useState(false);
 
   useEffect(() => {
     let progress = 0;
@@ -38,14 +44,25 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleStart = () => {
+  const handleMenuStart = () => {
+    setShowNamePrompt(true);
+  };
+
+  const handleNameSubmit = (name: string) => {
+    setShowNamePrompt(false);
     start();
     initAudio();
+    initNetwork(name);
   };
 
   return (
     <>
-      {!showLoading && !isStarted && <MainMenu onStart={handleStart} />}
+      {!showLoading && !isStarted && !showNamePrompt && (
+        <MainMenu onStart={handleMenuStart} />
+      )}
+      {!showLoading && !isStarted && showNamePrompt && (
+        <NamePrompt onSubmit={handleNameSubmit} />
+      )}
       {isStarted && (
         <div style={{ position: 'relative', width: '100vw', height: '100vh' }}>
           <Canvas
@@ -68,6 +85,9 @@ export default function App() {
           <Minimap />
           <MuteButton />
           <EpochIndicator />
+          <ChatBox />
+          <PlayerCount />
+          <ConnectionStatus />
         </div>
       )}
       {showLoading && <LoadingScreen progress={loadProgress} isLoaded={isLoaded} />}
