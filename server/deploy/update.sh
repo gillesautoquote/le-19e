@@ -11,7 +11,7 @@ cd /opt/le-19e
 echo "=== Mise à jour du serveur Le 19e ==="
 
 echo "[1/3] Installation des dépendances..."
-npm install --production
+npm install
 
 echo "[2/3] Build TypeScript..."
 npm run build
