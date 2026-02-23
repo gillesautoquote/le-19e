@@ -42,14 +42,26 @@ function generateChatId(): string {
 
 // ─── Room event binding ─────────────────────────────────────────
 
-function bindRoomEvents(r: Room): void {
+function syncState(state: Record<string, unknown>): void {
   const store = useMultiplayerStore;
-  const chat = useChatStore;
+  const players = state.players as
+    | { forEach: (cb: (p: Record<string, unknown>, k: string) => void) => void; size: number }
+    | undefined;
 
-  // Player state changes (Colyseus schema callbacks)
-  r.state.players.onAdd((player: Record<string, unknown>, key: string) => {
+  if (!players || typeof players.forEach !== 'function') return;
+
+  // Sync player count
+  const count = state.playerCount as number;
+  if (typeof count === 'number') {
+    store.getState().setPlayerCount(count);
+  }
+
+  // Sync all players
+  const seenIds = new Set<string>();
+  players.forEach((player: Record<string, unknown>, key: string) => {
+    seenIds.add(key);
     store.getState().setRemotePlayer(key, {
-      id: key as string,
+      id: key,
       name: player.name as string,
       x: player.x as number,
       z: player.z as number,
@@ -57,27 +69,24 @@ function bindRoomEvents(r: Room): void {
       anim: player.anim as number,
       epoch: player.epoch as 'A' | 'B',
     });
-
-    // Listen for individual field changes
-    player.onChange = () => {
-      store.getState().setRemotePlayer(key, {
-        x: player.x as number,
-        z: player.z as number,
-        rotation: player.rotation as number,
-        anim: player.anim as number,
-        epoch: player.epoch as 'A' | 'B',
-      });
-    };
   });
 
-  r.state.players.onRemove((_player: unknown, key: string) => {
-    store.getState().removeRemotePlayer(key);
-  });
+  // Remove players that left
+  for (const [id] of store.getState().remotePlayers) {
+    if (!seenIds.has(id)) {
+      store.getState().removeRemotePlayer(id);
+    }
+  }
+}
 
-  // Player count
-  r.state.listen('playerCount', (count: number) => {
-    store.getState().setPlayerCount(count);
-  });
+function bindRoomEvents(r: Room): void {
+  const chat = useChatStore;
+
+  // State sync via onStateChange (most reliable in @colyseus/schema 2.x)
+  r.onStateChange((state: Record<string, unknown>) => syncState(state));
+
+  // Process initial state immediately (already received before binding)
+  syncState(r.state as unknown as Record<string, unknown>);
 
   // Chat messages
   r.onMessage('chat', (data: {
