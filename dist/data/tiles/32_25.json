@@ -1,0 +1,1 @@
+{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"@id":"way/1190407035","footway":"sidewalk","highway":"footway","surface":"asphalt","id":"way/1190407035"},"geometry":{"type":"LineString","coordinates":[[2.4051911,48.8553503],[2.4053326,48.8548985],[2.4055519,48.8541578],[2.4056036,48.8540234],[2.4055948,48.8540007]]},"id":"way/1190407035"}]}

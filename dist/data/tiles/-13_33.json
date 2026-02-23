@@ -1,0 +1,1 @@
+{"type":"FeatureCollection","features":[{"type":"Feature","properties":{"@id":"way/852558034","bicycle":"yes","highway":"footway","lit":"yes","motor_vehicle":"no","name":"Chemin de halage","surface":"sett","id":"way/852558034"},"geometry":{"type":"LineString","coordinates":[[2.4133222,48.8947543],[2.415169,48.8949652],[2.4153763,48.8949871]]},"id":"way/852558034"}]}

@@ -27,7 +27,8 @@ let reconnectAttempts = 0;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let disposed = false;
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:2567';
+const WS_URL = import.meta.env.VITE_WS_URL
+  || `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}`;
 
 // ─── Helpers ────────────────────────────────────────────────────
 

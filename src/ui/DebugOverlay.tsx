@@ -4,7 +4,8 @@ import { useStreamingStore } from '@/store/streamingStore';
 import { useMultiplayerStore } from '@/store/multiplayerStore';
 import { sceneToGps } from '@/utils/geoUtils';
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:2567';
+const WS_URL = import.meta.env.VITE_WS_URL
+  || `ws://${window.location.host}`;
 
 const STYLE: React.CSSProperties = {
   position: 'absolute',
