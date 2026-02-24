@@ -9,7 +9,11 @@ import type { RouteSegment } from '@/types/npc';
 // ─── Route building ─────────────────────────────────────────────
 
 /** Precompute cumulative distances for efficient sampling. */
-export function buildRoute(points: [number, number][], width = 0): RouteSegment {
+export function buildRoute(
+  points: [number, number][],
+  width = 0,
+  oneway = false,
+): RouteSegment {
   const segmentLengths: number[] = [];
   const cumulativeLengths: number[] = [0];
   let total = 0;
@@ -23,7 +27,7 @@ export function buildRoute(points: [number, number][], width = 0): RouteSegment 
     cumulativeLengths.push(total);
   }
 
-  return { points, totalLength: total, segmentLengths, cumulativeLengths, width };
+  return { points, totalLength: total, segmentLengths, cumulativeLengths, width, oneway };
 }
 
 /** Binary search for interpolated position along route. O(log n). */

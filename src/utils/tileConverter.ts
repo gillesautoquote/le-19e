@@ -67,6 +67,7 @@ export function tileToSceneObjects(geojson: GeoJSONCollection): SceneObjects {
     points: r.coordinates.map(([lat, lng]) => toScenePos(lat, lng)),
     width: r.width,
     name: r.name,
+    oneway: r.oneway,
   }));
 
   const benches: SceneBench[] = osmData.benches.map((b) => ({

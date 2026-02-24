@@ -4,7 +4,7 @@ export const NPC = {
   carSpeedMin: 5,
   carSpeedMax: 8,
   maxCars: 50,
-  carEligibleTypes: new Set(['primary', 'secondary']) as ReadonlySet<string>,
+  carEligibleTypes: new Set(['primary', 'secondary', 'tertiary', 'residential']) as ReadonlySet<string>,
 
   // Boats
   boatCount: 4,

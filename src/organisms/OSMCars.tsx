@@ -9,8 +9,16 @@ interface OSMCarsProps {
   roads: SceneRoad[];
 }
 
-const CAR_SPACING = 30;
-const ELIGIBLE_TYPES: ReadonlySet<string> = new Set(['primary', 'secondary']);
+/** Spacing between parked cars along the road (meters). */
+const CAR_SPACING = 12;
+
+/** Margin from road edge for parked car position (meters). */
+const EDGE_MARGIN = 1.5;
+
+/** Road types eligible for parked cars. */
+const ELIGIBLE_TYPES: ReadonlySet<string> = new Set([
+  'primary', 'secondary', 'tertiary', 'residential',
+]);
 
 export default memo(function OSMCars({ roads }: OSMCarsProps) {
   const grouped = useMemo(() => {
@@ -23,7 +31,8 @@ export default memo(function OSMCars({ roads }: OSMCarsProps) {
       if (!ELIGIBLE_TYPES.has(road.type)) continue;
       if (road.points.length < 2) continue;
 
-      // Walk along polyline, placing cars at regular intervals
+      const parkOffset = road.width * 0.5 - EDGE_MARGIN;
+
       let accumulated = 0;
       for (let i = 0; i < road.points.length - 1; i++) {
         const [x1, z1] = road.points[i];
@@ -36,19 +45,35 @@ export default memo(function OSMCars({ roads }: OSMCarsProps) {
         const angle = Math.atan2(dx, dz);
         const nx = -dz / segLen;
         const nz = dx / segLen;
-        const offset = road.width * 0.25;
 
         while (accumulated < segLen) {
           const t = accumulated / segLen;
-          const px = x1 + dx * t + nx * offset;
-          const pz = z1 + dz * t + nz * offset;
+          const cx = x1 + dx * t;
+          const cz = z1 + dz * t;
 
-          const variantIdx = hashString(road.id + globalIdx) % KENNEY_CARS.length;
-          const def = KENNEY_CARS[variantIdx];
-          groups.get(def.key)!.push({ x: px, z: pz, rotationY: angle });
+          // Right side (always)
+          const varR = hashString(road.id + globalIdx) % KENNEY_CARS.length;
+          const defR = KENNEY_CARS[varR];
+          groups.get(defR.key)!.push({
+            x: cx - nx * parkOffset,
+            z: cz - nz * parkOffset,
+            rotationY: angle,
+          });
+          globalIdx++;
+
+          // Left side (only for two-way roads)
+          if (!road.oneway) {
+            const varL = hashString(road.id + globalIdx) % KENNEY_CARS.length;
+            const defL = KENNEY_CARS[varL];
+            groups.get(defL.key)!.push({
+              x: cx + nx * parkOffset,
+              z: cz + nz * parkOffset,
+              rotationY: angle + Math.PI,
+            });
+            globalIdx++;
+          }
 
           accumulated += CAR_SPACING;
-          globalIdx++;
         }
         accumulated -= segLen;
       }

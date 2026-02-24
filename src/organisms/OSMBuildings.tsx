@@ -3,8 +3,9 @@ import { MeshLambertMaterial } from 'three';
 import { Text, Billboard } from '@react-three/drei';
 import { EPOCH_A } from '@/constants/epochs';
 import { BUILDING_LABEL } from '@/constants/world';
-import { buildMergedBuildings } from '@/systems/buildingGeometry';
-import { createFacadeTexture } from '@/utils/facadeTexture';
+import { ALL_FACADE_MODULES } from '@/constants/kenneyModules';
+import { computeFacadeTiling } from '@/systems/facadeTilingSystem';
+import FacadeModuleInstances from '@/atoms/FacadeModuleInstances';
 import type { SceneBuilding } from '@/types/osm';
 
 interface OSMBuildingsProps {
@@ -12,40 +13,28 @@ interface OSMBuildingsProps {
 }
 
 export default memo(function OSMBuildings({ buildings }: OSMBuildingsProps) {
-  // Facade texture (created once, cached in facadeTexture module)
-  const facade = useMemo(() => createFacadeTexture(), []);
-
-  // Build merged wall + roof geometries from all buildings
-  const { walls, roofs, namedBuildings } = useMemo(
-    () => buildMergedBuildings(buildings, facade.tileWidth, facade.floorHeight),
-    [buildings, facade.tileWidth, facade.floorHeight],
-  );
-
-  // Materials (stable references via useMemo)
-  const wallMat = useMemo(
-    () => new MeshLambertMaterial({
-      map: facade.texture,
-      vertexColors: true,
-      flatShading: true,
-    }),
-    [facade.texture],
+  const { moduleInstances, roofGeometry, namedBuildings } = useMemo(
+    () => computeFacadeTiling(buildings),
+    [buildings],
   );
 
   const roofMat = useMemo(
-    () => new MeshLambertMaterial({
-      vertexColors: true,
-      flatShading: true,
-    }),
+    () => new MeshLambertMaterial({ vertexColors: true, flatShading: true }),
     [],
   );
 
   return (
     <>
-      {walls && (
-        <mesh geometry={walls} material={wallMat} castShadow receiveShadow />
-      )}
-      {roofs && (
-        <mesh geometry={roofs} material={roofMat} castShadow receiveShadow />
+      {ALL_FACADE_MODULES.map((def) => {
+        const instances = moduleInstances.get(def.key);
+        if (!instances?.length) return null;
+        return (
+          <FacadeModuleInstances key={def.key} moduleDef={def} instances={instances} />
+        );
+      })}
+
+      {roofGeometry && (
+        <mesh geometry={roofGeometry} material={roofMat} castShadow receiveShadow />
       )}
 
       {namedBuildings.map((label) => (

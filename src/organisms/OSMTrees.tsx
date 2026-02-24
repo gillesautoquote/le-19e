@@ -9,8 +9,8 @@ import {
 } from 'three';
 import { useGLTF } from '@react-three/drei';
 import { hashString } from '@/utils/geoUtils';
-import { KENNEY_TREES } from '@/constants/kenneyTrees';
-import type { KenneyTreeDef } from '@/constants/kenneyTrees';
+import { KAYKIT_TREES } from '@/constants/kaykitForest';
+import type { KaykitTreeDef } from '@/constants/kaykitForest';
 import { getTerrainHeight } from '@/systems/terrainSystem';
 import type { SceneTree } from '@/types/osm';
 
@@ -45,7 +45,7 @@ function extractAllMeshes(scene: Group): MeshData[] {
 // ─── Sub-component: one variant (multiple InstancedMesh) ───────────
 
 interface TreeVariantProps {
-  modelDef: KenneyTreeDef;
+  modelDef: KaykitTreeDef;
   instances: TreeInstance[];
 }
 
@@ -100,12 +100,12 @@ function TreeVariantInstances({ modelDef, instances }: TreeVariantProps) {
 export default memo(function OSMTrees({ trees }: OSMTreesProps) {
   const grouped = useMemo(() => {
     const groups = new Map<string, TreeInstance[]>();
-    for (const def of KENNEY_TREES) groups.set(def.key, []);
+    for (const def of KAYKIT_TREES) groups.set(def.key, []);
 
     for (let i = 0; i < trees.length; i++) {
       const tree = trees[i];
-      const variantIdx = hashString(tree.id ?? String(i)) % KENNEY_TREES.length;
-      const def = KENNEY_TREES[variantIdx];
+      const variantIdx = hashString(tree.id ?? String(i)) % KAYKIT_TREES.length;
+      const def = KAYKIT_TREES[variantIdx];
       const [x, z] = tree.position;
       const h = tree.height || 8;
       const scale = h / def.nativeHeight;
@@ -123,7 +123,7 @@ export default memo(function OSMTrees({ trees }: OSMTreesProps) {
 
   return (
     <group>
-      {KENNEY_TREES.map((def) => {
+      {KAYKIT_TREES.map((def) => {
         const instances = grouped.get(def.key);
         if (!instances || instances.length === 0) return null;
         return (

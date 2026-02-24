@@ -6,6 +6,7 @@ export interface RouteSegment {
   segmentLengths: number[];       // length of each sub-segment
   cumulativeLengths: number[];    // cumulative distance at each point index
   width: number;                  // route width (meters) — used for side offset
+  oneway: boolean;                // true = one-way street
 }
 
 // ─── Animated entity types ──────────────────────────────────────
@@ -16,6 +17,7 @@ export interface AnimatedCar {
   speed: number;                  // m/s (5-8)
   direction: 1 | -1;             // forward or backward along polyline
   variantIndex: number;           // index into KENNEY_CARS
+  laneOffset: number;             // perpendicular offset from centerline (meters)
   alive: boolean;                 // false = ready for respawn
   x: number;
   z: number;

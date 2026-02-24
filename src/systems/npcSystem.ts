@@ -48,12 +48,17 @@ function spawnCar(px: number, pz: number): AnimatedCar | null {
   }
 
   const progress = randomRange(0, route.totalLength, seed);
-  const s = sampleRoute(route, progress);
+  // One-way: always direction 1, center lane (offset 0)
+  // Two-way: random direction, offset to right side (France = drive right)
+  const direction: 1 | -1 = route.oneway ? 1 : (seededRandom(seed + 2) > 0.5 ? 1 : -1);
+  const laneOffset = route.oneway ? 0 : -direction * route.width * 0.25;
+  const s = sampleRouteOffset(route, progress, laneOffset);
   return {
     routeIndex: rIdx, progress,
     speed: randomRange(NPC.carSpeedMin, NPC.carSpeedMax, seed + 1),
-    direction: seededRandom(seed + 2) > 0.5 ? 1 : -1,
+    direction,
     variantIndex: Math.abs(hashString(`v${seed}`)) % KENNEY_CARS.length,
+    laneOffset,
     alive: true, x: s.x, z: s.z, rotationY: s.rotationY,
   };
 }
@@ -129,7 +134,7 @@ export function initNPCs(
 ): void {
   carRoutes = roads
     .filter((r) => NPC.carEligibleTypes.has(r.type) && r.points.length >= 2)
-    .map((r) => buildRoute(r.points));
+    .map((r) => buildRoute(r.points, r.width, r.oneway));
   boatRoutes = waterways
     .filter((w) => w.points.length >= 2)
     .map((w) => buildRoute(w.points, w.width));
@@ -160,7 +165,7 @@ export function tickNPCs(delta: number, playerX: number, playerZ: number): void 
   globalTime += delta;
   const cullR2 = NPC.cullRadius * NPC.cullRadius;
 
-  // Cars
+  // Cars — offset to lane position
   for (const car of cars) {
     if (!car.alive) continue;
     car.progress += car.speed * car.direction * delta;
@@ -168,7 +173,7 @@ export function tickNPCs(delta: number, playerX: number, playerZ: number): void 
     if (!route || car.progress > route.totalLength || car.progress < 0) {
       car.alive = false; continue;
     }
-    const s = sampleRoute(route, car.progress);
+    const s = sampleRouteOffset(route, car.progress, car.laneOffset);
     car.x = s.x; car.z = s.z;
     car.rotationY = car.direction === 1 ? s.rotationY : s.rotationY + Math.PI;
     if (distSq(car.x, car.z, playerX, playerZ) > cullR2) car.alive = false;

@@ -18,7 +18,7 @@ interface OSMRoadsProps {
   roads: SceneRoad[];
 }
 
-const CROSSING_Y = 0.03;
+const CROSSING_Y = 0.13;
 const SIDEWALK_Y = 0.0;
 
 // ─── Kenney tile InstancedMesh sub-component ────────────────────────
@@ -51,8 +51,11 @@ function TileLayer({ tileDef, instances, y }: TileLayerProps) {
     for (let i = 0; i < instances.length; i++) {
       const inst = instances[i];
       dummy.position.set(inst.x, inst.y + y, inst.z);
-      dummy.rotation.set(0, inst.rotationY, 0);
-      dummy.scale.set(inst.scaleX, 1, inst.scaleZ);
+      dummy.rotation.set(0, inst.rotationY + tileDef.rotationOffset, 0);
+      // When tile is rotated 90°, swap X/Z scales so markings stay proportional
+      const sx = tileDef.swapScale ? inst.scaleZ : inst.scaleX;
+      const sz = tileDef.swapScale ? inst.scaleX : inst.scaleZ;
+      dummy.scale.set(sx, 1, sz);
       dummy.updateMatrix();
       ref.current.setMatrixAt(i, dummy.matrix);
     }

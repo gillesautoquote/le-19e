@@ -1,9 +1,12 @@
 import { Component, ReactNode } from 'react';
 import { useGLTF, useProgress } from '@react-three/drei';
-import { KENNEY_TREES } from '@/constants/kenneyTrees';
+import { KAYKIT_TREES } from '@/constants/kaykitForest';
 import { KENNEY_CARS } from '@/constants/kenneyCars';
 import { ALL_ROAD_TILES } from '@/constants/kenneyRoads';
 import { KENNEY_BOATS } from '@/constants/kenneyWatercraft';
+import { ALL_KAYKIT_URBAN } from '@/constants/kaykitUrban';
+import { ALL_FACADE_MODULES } from '@/constants/kenneyModules';
+import { SHOP_MODEL_PATHS } from '@/constants/kenneyShops';
 
 export const MODEL_PATHS = {
   // Street lights — Kenney roads kit
@@ -18,10 +21,6 @@ export const MODEL_PATHS = {
   awning: '/models/kenney/commercial/detail-awning.glb',
   awningWide: '/models/kenney/commercial/detail-awning-wide.glb',
 
-  // Characters — Kenney minifigs (legacy)
-  characterMale: '/models/character_male.glb',
-  characterFemale: '/models/character_female.glb',
-
   // Mixamo animated character
   characterIdle: '/models/mixamo/idle.glb',
   characterWalk: '/models/mixamo/walking.glb',
@@ -31,7 +30,7 @@ export const MODEL_PATHS = {
 Object.values(MODEL_PATHS).forEach((path) => {
   useGLTF.preload(path);
 });
-KENNEY_TREES.forEach((def) => {
+KAYKIT_TREES.forEach((def) => {
   useGLTF.preload(def.path);
 });
 KENNEY_CARS.forEach((def) => {
@@ -42,6 +41,15 @@ ALL_ROAD_TILES.forEach((def) => {
 });
 KENNEY_BOATS.forEach((def) => {
   useGLTF.preload(def.path);
+});
+ALL_KAYKIT_URBAN.forEach((def) => {
+  useGLTF.preload(def.path);
+});
+ALL_FACADE_MODULES.forEach((def) => {
+  useGLTF.preload(def.path);
+});
+SHOP_MODEL_PATHS.forEach((path) => {
+  useGLTF.preload(path);
 });
 
 interface AssetsState {
