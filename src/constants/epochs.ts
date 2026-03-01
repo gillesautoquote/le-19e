@@ -14,7 +14,8 @@ export const EPOCH_A = {
   groundEdge: '#B0A890',
   terrainHigh: '#C4B896',
   fog: '#E8E0D0',
-  sunLight: '#FFF4E0',
+  sunLight: '#FFD699',
+  sunLightSecondary: '#FF8844',
   playerBody: '#3498DB',
   playerHead: '#F5CBA7',
   playerLegs: '#2C3E50',
@@ -55,6 +56,10 @@ export const EPOCH_A = {
   shopCinema: '#C44040',
   shopOther: '#7B7B7B',
 
+  // Canal trench
+  canalWall: '#8A8070',      // pierre calcaire claire
+  canalBed: '#4A4438',       // fond vaseux sombre
+
   // Road surfaces
   roadPrimary: '#606060',
   roadSecondary: '#707068',
@@ -64,8 +69,8 @@ export const EPOCH_A = {
   roadCycleway: '#5A8A5A',
 
   // Lighting
-  ambientLight: '#E0E8FF',
-  sunLightColor: '#FFF5E0',
+  ambientLight: '#FFF0D0',
+  sunLightColor: '#FFD699',
 
   // NPC colors
   npcBodyA: '#3A6B8C',
@@ -77,9 +82,57 @@ export const EPOCH_A = {
   birdBody: '#4A4A4A',
   birdWing: '#6A6A6A',
 
+  // Pigeons (ground)
+  pigeonBody: '#7A6858',
+  pigeonWing: '#5A4838',
+  pigeonHead: '#9A8878',
+
+  // Falling leaves
+  leafA: '#D4813A',
+  leafB: '#C44A2A',
+  leafC: '#E0A830',
+  leafD: '#8FC870',
+  leafE: '#B8D860',
+  leafMote: '#FFF5D0',
+
+  // Vegetation details
+  flowerYellow: '#F5D060',
+  flowerPink: '#E88090',
+  flowerWhite: '#F0EDE0',
+  grassDark: '#6BAA60',
+  grassLight: '#8BC88A',
+
   // Text labels (3D billboards)
   labelText: '#1A1A1A',
   labelOutline: '#FFFFFF',
+
+  // Multiplayer — remote player body colors (8 variants)
+  remoteBodyA: '#E67E22',
+  remoteBodyB: '#9B59B6',
+  remoteBodyC: '#1ABC9C',
+  remoteBodyD: '#E74C3C',
+  remoteBodyE: '#2ECC71',
+  remoteBodyF: '#F39C12',
+  remoteBodyG: '#3498DB',
+  remoteBodyH: '#E84393',
+  remoteHead: '#F5CBA7',
+  remoteLegs: '#34495E',
+
+  // Multiplayer — chat & minimap
+  chatBubbleBg: '#FFFFFF',
+  chatBubbleText: '#1A1A1A',
+  chatBubbleBorder: '#E0D8C8',
+  minimapRemote: '#E67E22',
+
+  // Debug overlay
+  debugCenterline: '#FFD700',
+  debugRoadWidth: '#FF8C00',
+  debugSidewalk: '#00CED1',
+  debugGrade: '#00FF7F',
+  debugTileMarker: '#FF00FF',
+
+  // GLB material fallback
+  glbFallbackWhite: '#FFFFFF',
 } as const;
 
 // Epoch B — Paris post-apo (froid, désaturé)
@@ -99,6 +152,7 @@ export const EPOCH_B = {
   terrainHigh: '#5A5A4E',
   fog: '#3D3D35',
   sunLight: '#C8B89A',
+  sunLightSecondary: '#8A7060',
   playerBody: '#2C5F7C',
   playerHead: '#C8A882',
   playerLegs: '#1A2830',
@@ -139,6 +193,10 @@ export const EPOCH_B = {
   shopCinema: '#6A2A2A',
   shopOther: '#4A4A4A',
 
+  // Canal trench
+  canalWall: '#4A4440',      // pierre sombre, patinée
+  canalBed: '#2A2820',       // fond vaseux très sombre
+
   // Road surfaces
   roadPrimary: '#4A4A3E',
   roadSecondary: '#505040',
@@ -161,9 +219,57 @@ export const EPOCH_B = {
   birdBody: '#3A3A3A',
   birdWing: '#4A4A4A',
 
+  // Pigeons (ground)
+  pigeonBody: '#5A5048',
+  pigeonWing: '#3A3028',
+  pigeonHead: '#6A6058',
+
+  // Falling leaves
+  leafA: '#8A5030',
+  leafB: '#7A3020',
+  leafC: '#8A7020',
+  leafD: '#506040',
+  leafE: '#708040',
+  leafMote: '#A0A080',
+
+  // Vegetation details
+  flowerYellow: '#8A7030',
+  flowerPink: '#7A4048',
+  flowerWhite: '#8A8878',
+  grassDark: '#4A6A38',
+  grassLight: '#5A7A50',
+
   // Text labels (3D billboards)
   labelText: '#3A3A3A',
   labelOutline: '#CCCCCC',
+
+  // Multiplayer — remote player body colors (8 variants, desaturated)
+  remoteBodyA: '#8A5A1A',
+  remoteBodyB: '#5A3A6A',
+  remoteBodyC: '#1A6A5A',
+  remoteBodyD: '#8A3A3A',
+  remoteBodyE: '#2A6A41',
+  remoteBodyF: '#8A6A1A',
+  remoteBodyG: '#2A5A7A',
+  remoteBodyH: '#8A3A5A',
+  remoteHead: '#C8A882',
+  remoteLegs: '#1A2830',
+
+  // Multiplayer — chat & minimap
+  chatBubbleBg: '#3A3A35',
+  chatBubbleText: '#C8C8C0',
+  chatBubbleBorder: '#5A5A50',
+  minimapRemote: '#8A5A1A',
+
+  // Debug overlay
+  debugCenterline: '#8A7A30',
+  debugRoadWidth: '#8A5A10',
+  debugSidewalk: '#008A8A',
+  debugGrade: '#008A4A',
+  debugTileMarker: '#8A008A',
+
+  // GLB material fallback
+  glbFallbackWhite: '#CCCCCC',
 } as const;
 
 export type EpochPalette = typeof EPOCH_A;

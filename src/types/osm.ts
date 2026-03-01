@@ -62,6 +62,7 @@ export interface OSMRoad {
   coordinates: [number, number][]; // [lat, lng][] linestring
   width: number;                   // meters
   name: string | null;
+  oneway: boolean;
 }
 
 export interface OSMBench {
@@ -208,6 +209,7 @@ export interface SceneRoad {
   points: [number, number][];   // [x, z][] centerline in scene units
   width: number;                // scene units
   name: string | null;
+  oneway: boolean;
 }
 
 export interface ScenePointObject {

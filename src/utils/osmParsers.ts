@@ -103,6 +103,7 @@ export function parseRoad(feature: GeoJSONFeature): OSMRoad | null {
     coordinates: coords,
     width: ROAD_WIDTH[rawType] ?? ROAD_WIDTH[type] ?? 6,
     name: feature.properties.name ?? null,
+    oneway: feature.properties.oneway === 'yes',
   };
 }
 

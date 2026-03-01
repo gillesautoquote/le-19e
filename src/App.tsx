@@ -1,56 +1,68 @@
 import { useState, useEffect } from 'react';
 import { Canvas } from '@react-three/fiber';
+import { useProgress } from '@react-three/drei';
 import { PCFSoftShadowMap } from 'three';
 import { useWorldStore } from '@/store/worldStore';
 import { initAudio } from '@/systems/audioSystem';
+import { initNetwork } from '@/systems/networkSystem';
 import { CAMERA } from '@/constants/world';
+import '@/hooks/useAssets'; // Trigger GLB preloads at module level
 import '@/styles/ui.css';
 
 import CanalOurcq from '@/scenes/CanalOurcq';
 import LoadingScreen from '@/ui/LoadingScreen';
 import MainMenu from '@/ui/MainMenu';
+import NamePrompt from '@/ui/NamePrompt';
 import Minimap from '@/ui/Minimap';
 import MuteButton from '@/ui/MuteButton';
 import EpochIndicator from '@/ui/EpochIndicator';
 import DebugOverlay from '@/ui/DebugOverlay';
+import ChatBox from '@/ui/ChatBox';
+import PlayerCount from '@/ui/PlayerCount';
+import ConnectionStatus from '@/ui/ConnectionStatus';
+import DebugRoadPanel from '@/ui/DebugRoadPanel';
+import EditorOverlay from '@/ui/EditorOverlay';
 
 export default function App() {
   const isStarted = useWorldStore((s) => s.isStarted);
   const start = useWorldStore((s) => s.start);
-  const [loadProgress, setLoadProgress] = useState(0);
-  const [isLoaded, setIsLoaded] = useState(false);
+  const { progress, total } = useProgress();
+  const isLoaded = total > 0 && progress >= 100;
   const [showLoading, setShowLoading] = useState(true);
+  const [showNamePrompt, setShowNamePrompt] = useState(false);
 
+  // Fade out loading screen once assets are ready
   useEffect(() => {
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += Math.random() * 15 + 5;
-      if (progress >= 100) {
-        progress = 100;
-        clearInterval(interval);
-        setTimeout(() => {
-          setIsLoaded(true);
-          setTimeout(() => setShowLoading(false), 800);
-        }, 300);
-      }
-      setLoadProgress(Math.min(progress, 100));
-    }, 200);
-    return () => clearInterval(interval);
-  }, []);
+    if (isLoaded) {
+      const timer = setTimeout(() => setShowLoading(false), 800);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoaded]);
 
-  const handleStart = () => {
+  const handleMenuStart = () => {
+    setShowNamePrompt(true);
+  };
+
+  const handleNameSubmit = (name: string) => {
+    setShowNamePrompt(false);
     start();
     initAudio();
+    initNetwork(name);
   };
 
   return (
     <>
-      {!showLoading && !isStarted && <MainMenu onStart={handleStart} />}
+      {!showLoading && !isStarted && !showNamePrompt && (
+        <MainMenu onStart={handleMenuStart} />
+      )}
+      {!showLoading && !isStarted && showNamePrompt && (
+        <NamePrompt onSubmit={handleNameSubmit} />
+      )}
       {isStarted && (
         <div style={{ position: 'relative', width: '100vw', height: '100vh' }}>
           <Canvas
             shadows
-            dpr={[1, 2]}
+            dpr={1.5}
             camera={{
               fov: CAMERA.fov,
               near: CAMERA.near,
@@ -68,9 +80,14 @@ export default function App() {
           <Minimap />
           <MuteButton />
           <EpochIndicator />
+          <ChatBox />
+          <PlayerCount />
+          <ConnectionStatus />
+          <DebugRoadPanel />
+          <EditorOverlay />
         </div>
       )}
-      {showLoading && <LoadingScreen progress={loadProgress} isLoaded={isLoaded} />}
+      {showLoading && <LoadingScreen progress={progress} isLoaded={isLoaded} />}
     </>
   );
 }

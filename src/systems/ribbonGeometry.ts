@@ -1,5 +1,6 @@
 import { Vector2, PlaneGeometry, BufferGeometry, Float32BufferAttribute } from 'three';
 import { getTerrainHeight } from '@/systems/terrainSystem';
+import { getRoadGradeHeight } from '@/systems/roadGradeSystem';
 import type { SceneWater, SceneRoad } from '@/types/osm';
 
 // ─── Waterway geometry ───────────────────────────────────────────
@@ -186,8 +187,13 @@ export function roadToGeometry(road: SceneRoad): RoadGeometryResult {
     const lz = leftSide[i].y;
     const rx = rightSide[i].x;
     const rz = rightSide[i].y;
-    vertices.push(lx, getTerrainHeight(lx, lz) + ROAD_Y_OFFSET, lz);
-    vertices.push(rx, getTerrainHeight(rx, rz) + ROAD_Y_OFFSET, rz);
+    // Use centerline grade for a flat cross-section; fall back to terrain
+    const cx = (lx + rx) / 2;
+    const cz = (lz + rz) / 2;
+    const grade = getRoadGradeHeight(cx, cz);
+    const y = (grade > -Infinity ? grade : getTerrainHeight(cx, cz)) + ROAD_Y_OFFSET;
+    vertices.push(lx, y, lz);
+    vertices.push(rx, y, rz);
 
     if (i < leftSide.length - 1) {
       const base = i * 2;

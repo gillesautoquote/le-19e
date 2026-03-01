@@ -7,10 +7,13 @@ import {
   BufferGeometry,
   Material,
   Group,
+  Matrix4,
 } from 'three';
 import { useGLTF } from '@react-three/drei';
 import { NPC } from '@/constants/npc';
 import { getTerrainHeight } from '@/systems/terrainSystem';
+import { getRoadSurfaceHeight } from '@/systems/roadTileSystem';
+import { getRoadGradeHeight } from '@/systems/roadGradeSystem';
 import { getAnimatedCars } from '@/systems/npcSystem';
 import type { KenneyCarDef } from '@/constants/kenneyCars';
 
@@ -28,12 +31,18 @@ interface AnimatedCarInstancesProps {
   variantIndex: number;
 }
 
+/** Extract meshes with baked transforms so sub-objects (wheels) keep their position. */
 function extractAllMeshes(scene: Group): MeshData[] {
   const results: MeshData[] = [];
+  scene.updateWorldMatrix(true, true);
+  const rootInverse = new Matrix4().copy(scene.matrixWorld).invert();
   scene.traverse((node: Object3D) => {
     if ((node as Mesh).isMesh) {
       const mesh = node as Mesh;
-      results.push({ geometry: mesh.geometry, material: mesh.material as Material });
+      const geo = mesh.geometry.clone();
+      const localMatrix = new Matrix4().copy(mesh.matrixWorld).premultiply(rootInverse);
+      geo.applyMatrix4(localMatrix);
+      results.push({ geometry: geo, material: mesh.material as Material });
     }
   });
   return results;
@@ -62,7 +71,9 @@ export default function AnimatedCarInstances({
 
     for (const car of allCars) {
       if (!car.alive || car.variantIndex !== variantIndex) continue;
-      dummy.position.set(car.x, getTerrainHeight(car.x, car.z) + CAR_Y, car.z);
+      const roadY = Math.max(getRoadSurfaceHeight(car.x, car.z), getRoadGradeHeight(car.x, car.z));
+      const baseY = roadY > -Infinity ? roadY : getTerrainHeight(car.x, car.z) + CAR_Y;
+      dummy.position.set(car.x, baseY, car.z);
       dummy.rotation.set(0, car.rotationY, 0);
       dummy.scale.setScalar(CAR_SCALE);
       dummy.updateMatrix();

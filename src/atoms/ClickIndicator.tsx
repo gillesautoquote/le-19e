@@ -1,11 +1,11 @@
-import { useRef } from 'react';
+import { useRef, type MutableRefObject } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Mesh, MeshBasicMaterial } from 'three';
 import { EPOCH_A } from '@/constants/epochs';
 import { CLICK_INDICATOR } from '@/constants/player';
 
 interface ClickIndicatorProps {
-  indicatorRef: React.RefObject<{ position: [number, number, number]; time: number } | null>;
+  indicatorRef: MutableRefObject<{ position: [number, number, number]; time: number } | null>;
 }
 
 export default function ClickIndicator({ indicatorRef }: ClickIndicatorProps) {

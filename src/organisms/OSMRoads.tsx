@@ -8,26 +8,32 @@ import {
   Group,
 } from 'three';
 import { useGLTF } from '@react-three/drei';
-import { ROAD_TILE, CROSSING_TILE, SIDEWALK_TILE } from '@/constants/kenneyRoads';
-import type { KenneyRoadTileDef } from '@/constants/kenneyRoads';
-import { computeRoadTiles, computeRoadSurfaceTiles } from '@/systems/roadTileSystem';
-import type { TileInstance } from '@/systems/roadTileSystem';
+import {
+  ROAD_STRAIGHT, ROAD_CROSSING, ROAD_CORNER,
+  ROAD_TSPLIT, ROAD_JUNCTION, ROAD_SIDEWALK,
+  ALL_ROAD_GRID_TILES,
+} from '@/constants/kenneyRoads';
+import type { KaykitRoadTileDef } from '@/constants/kenneyRoads';
+import { computeRoadGrid, populateGridSurface } from '@/systems/roadGridSystem';
+import type { GridTileInstance } from '@/systems/roadGridSystem';
+import { getSurfaceGrid } from '@/systems/roadTileSystem';
 import type { SceneRoad } from '@/types/osm';
 
 interface OSMRoadsProps {
   roads: SceneRoad[];
 }
 
-const CROSSING_Y = 0.03;
-const SIDEWALK_Y = 0.0;
+// ─── Tile def lookup by key ──────────────────────────────────────
 
-// ─── Kenney tile InstancedMesh sub-component ────────────────────────
+const TILE_DEFS: Record<string, KaykitRoadTileDef> = {
+  [ROAD_STRAIGHT.key]: ROAD_STRAIGHT,
+  [ROAD_CROSSING.key]: ROAD_CROSSING,
+  [ROAD_CORNER.key]: ROAD_CORNER,
+  [ROAD_TSPLIT.key]: ROAD_TSPLIT,
+  [ROAD_JUNCTION.key]: ROAD_JUNCTION,
+};
 
-interface TileLayerProps {
-  tileDef: KenneyRoadTileDef;
-  instances: TileInstance[];
-  y: number;
-}
+// ─── Mesh extraction helper ──────────────────────────────────────
 
 function extractMesh(scene: Group): { geometry: BufferGeometry; material: Material } | null {
   let result: { geometry: BufferGeometry; material: Material } | null = null;
@@ -40,7 +46,14 @@ function extractMesh(scene: Group): { geometry: BufferGeometry; material: Materi
   return result;
 }
 
-function TileLayer({ tileDef, instances, y }: TileLayerProps) {
+// ─── InstancedMesh layer (uniform scale) ─────────────────────────
+
+interface GridTileLayerProps {
+  tileDef: KaykitRoadTileDef;
+  instances: GridTileInstance[];
+}
+
+function GridTileLayer({ tileDef, instances }: GridTileLayerProps) {
   const { scene } = useGLTF(tileDef.path);
   const meshData = useMemo(() => extractMesh(scene), [scene]);
   const ref = useRef<InstancedMeshType>(null);
@@ -50,14 +63,14 @@ function TileLayer({ tileDef, instances, y }: TileLayerProps) {
     const dummy = new Object3D();
     for (let i = 0; i < instances.length; i++) {
       const inst = instances[i];
-      dummy.position.set(inst.x, inst.y + y, inst.z);
+      dummy.position.set(inst.x, inst.y, inst.z);
       dummy.rotation.set(0, inst.rotationY, 0);
-      dummy.scale.set(inst.scaleX, 1, inst.scaleZ);
+      dummy.scale.setScalar(1);
       dummy.updateMatrix();
       ref.current.setMatrixAt(i, dummy.matrix);
     }
     ref.current.instanceMatrix.needsUpdate = true;
-  }, [instances, y]);
+  }, [instances]);
 
   if (!meshData || instances.length === 0) return null;
 
@@ -71,24 +84,30 @@ function TileLayer({ tileDef, instances, y }: TileLayerProps) {
   );
 }
 
-// ─── Main component ─────────────────────────────────────────────────
+// ─── Main component ──────────────────────────────────────────────
 
 export default memo(function OSMRoads({ roads }: OSMRoadsProps) {
-  const roadSurfaceTiles = useMemo(
-    () => computeRoadSurfaceTiles(roads),
-    [roads],
-  );
-
-  const { crossingTiles, sidewalkTiles } = useMemo(
-    () => computeRoadTiles(roads),
-    [roads],
-  );
+  const gridResult = useMemo(() => {
+    const result = computeRoadGrid(roads);
+    populateGridSurface(result, getSurfaceGrid());
+    return result;
+  }, [roads]);
 
   return (
     <group>
-      <TileLayer tileDef={ROAD_TILE} instances={roadSurfaceTiles} y={0} />
-      <TileLayer tileDef={CROSSING_TILE} instances={crossingTiles} y={CROSSING_Y} />
-      <TileLayer tileDef={SIDEWALK_TILE} instances={sidewalkTiles} y={SIDEWALK_Y} />
+      {ALL_ROAD_GRID_TILES.map((def) => {
+        const group = TILE_DEFS[def.key];
+        if (!group) {
+          // Sidewalk
+          if (def.key === ROAD_SIDEWALK.key && gridResult.sidewalks.length > 0) {
+            return <GridTileLayer key={def.key} tileDef={def} instances={gridResult.sidewalks} />;
+          }
+          return null;
+        }
+        const instances = gridResult.tileGroups.get(def.key);
+        if (!instances || instances.length === 0) return null;
+        return <GridTileLayer key={def.key} tileDef={def} instances={instances} />;
+      })}
     </group>
   );
 });

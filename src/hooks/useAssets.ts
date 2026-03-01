@@ -1,10 +1,15 @@
 import { Component, ReactNode } from 'react';
 import { useGLTF, useProgress } from '@react-three/drei';
-import { ALL_KENNEY_BUILDINGS } from '@/constants/kenneyBuildings';
-import { KENNEY_TREES } from '@/constants/kenneyTrees';
+import { KAYKIT_TREES, KAYKIT_BUSHES, KAYKIT_GRASS } from '@/constants/kaykitForest';
+import { KAYKIT_ROCKS } from '@/constants/kaykitRocks';
+import { KAYKIT_STATIC_CARS } from '@/constants/kaykitCars';
+import { ALL_PARK_TILES } from '@/constants/kaykitParks';
 import { KENNEY_CARS } from '@/constants/kenneyCars';
-import { ALL_ROAD_TILES } from '@/constants/kenneyRoads';
+import { ALL_ROAD_GRID_TILES, LEGACY_ROAD_TILES } from '@/constants/kenneyRoads';
 import { KENNEY_BOATS } from '@/constants/kenneyWatercraft';
+import { ALL_KAYKIT_URBAN } from '@/constants/kaykitUrban';
+import { ALL_FACADE_MODULES } from '@/constants/kenneyModules';
+import { SHOP_MODEL_PATHS } from '@/constants/kenneyShops';
 
 export const MODEL_PATHS = {
   // Street lights — Kenney roads kit
@@ -19,10 +24,6 @@ export const MODEL_PATHS = {
   awning: '/models/kenney/commercial/detail-awning.glb',
   awningWide: '/models/kenney/commercial/detail-awning-wide.glb',
 
-  // Characters — Kenney minifigs (legacy)
-  characterMale: '/models/character_male.glb',
-  characterFemale: '/models/character_female.glb',
-
   // Mixamo animated character
   characterIdle: '/models/mixamo/idle.glb',
   characterWalk: '/models/mixamo/walking.glb',
@@ -32,20 +33,44 @@ export const MODEL_PATHS = {
 Object.values(MODEL_PATHS).forEach((path) => {
   useGLTF.preload(path);
 });
-ALL_KENNEY_BUILDINGS.forEach((def) => {
+KAYKIT_TREES.forEach((def) => {
   useGLTF.preload(def.path);
 });
-KENNEY_TREES.forEach((def) => {
+KAYKIT_BUSHES.forEach((def) => {
+  useGLTF.preload(def.path);
+});
+KAYKIT_GRASS.forEach((def) => {
+  useGLTF.preload(def.path);
+});
+KAYKIT_ROCKS.forEach((def) => {
+  useGLTF.preload(def.path);
+});
+KAYKIT_STATIC_CARS.forEach((def) => {
+  useGLTF.preload(def.path);
+});
+ALL_PARK_TILES.forEach((def) => {
   useGLTF.preload(def.path);
 });
 KENNEY_CARS.forEach((def) => {
   useGLTF.preload(def.path);
 });
-ALL_ROAD_TILES.forEach((def) => {
+ALL_ROAD_GRID_TILES.forEach((def) => {
+  useGLTF.preload(def.path);
+});
+LEGACY_ROAD_TILES.forEach((def) => {
   useGLTF.preload(def.path);
 });
 KENNEY_BOATS.forEach((def) => {
   useGLTF.preload(def.path);
+});
+ALL_KAYKIT_URBAN.forEach((def) => {
+  useGLTF.preload(def.path);
+});
+ALL_FACADE_MODULES.forEach((def) => {
+  useGLTF.preload(def.path);
+});
+SHOP_MODEL_PATHS.forEach((path) => {
+  useGLTF.preload(path);
 });
 
 interface AssetsState {

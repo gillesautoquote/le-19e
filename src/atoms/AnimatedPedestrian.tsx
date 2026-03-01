@@ -5,6 +5,7 @@ import { EPOCH_A } from '@/constants/epochs';
 import { NPC } from '@/constants/npc';
 import { getAnimatedPedestrians } from '@/systems/npcSystem';
 import { getTerrainHeight } from '@/systems/terrainSystem';
+import { getRoadGradeHeight } from '@/systems/roadGradeSystem';
 
 // ─── Body color variants ────────────────────────────────────────
 
@@ -51,7 +52,7 @@ const Pedestrian = memo(function Pedestrian({ index }: PedestrianProps) {
       visibleRef.current = true;
     }
 
-    const y = getTerrainHeight(ped.x, ped.z);
+    const y = Math.max(getTerrainHeight(ped.x, ped.z), getRoadGradeHeight(ped.x, ped.z));
     groupRef.current.position.set(ped.x, y, ped.z);
     groupRef.current.rotation.y = ped.rotationY;
 

@@ -8,9 +8,10 @@ import {
   Group,
 } from 'three';
 import { useGLTF } from '@react-three/drei';
+import { useControls } from 'leva';
 import { hashString } from '@/utils/geoUtils';
-import { KENNEY_TREES } from '@/constants/kenneyTrees';
-import type { KenneyTreeDef } from '@/constants/kenneyTrees';
+import { KAYKIT_TREES } from '@/constants/kaykitForest';
+import type { KaykitTreeDef } from '@/constants/kaykitForest';
 import { getTerrainHeight } from '@/systems/terrainSystem';
 import type { SceneTree } from '@/types/osm';
 
@@ -45,7 +46,7 @@ function extractAllMeshes(scene: Group): MeshData[] {
 // ─── Sub-component: one variant (multiple InstancedMesh) ───────────
 
 interface TreeVariantProps {
-  modelDef: KenneyTreeDef;
+  modelDef: KaykitTreeDef;
   instances: TreeInstance[];
 }
 
@@ -98,17 +99,22 @@ function TreeVariantInstances({ modelDef, instances }: TreeVariantProps) {
 // ─── Main component ─────────────────────────────────────────────────
 
 export default memo(function OSMTrees({ trees }: OSMTreesProps) {
+  const { scaleMul, defaultHeight } = useControls('Arbres', {
+    scaleMul: { value: 1, min: 0.2, max: 3, step: 0.05, label: 'Scale mult.' },
+    defaultHeight: { value: 8, min: 2, max: 20, step: 0.5, label: 'Hauteur défaut' },
+  });
+
   const grouped = useMemo(() => {
     const groups = new Map<string, TreeInstance[]>();
-    for (const def of KENNEY_TREES) groups.set(def.key, []);
+    for (const def of KAYKIT_TREES) groups.set(def.key, []);
 
     for (let i = 0; i < trees.length; i++) {
       const tree = trees[i];
-      const variantIdx = hashString(tree.id ?? String(i)) % KENNEY_TREES.length;
-      const def = KENNEY_TREES[variantIdx];
+      const variantIdx = hashString(tree.id ?? String(i)) % KAYKIT_TREES.length;
+      const def = KAYKIT_TREES[variantIdx];
       const [x, z] = tree.position;
-      const h = tree.height || 8;
-      const scale = h / def.nativeHeight;
+      const h = tree.height || defaultHeight;
+      const scale = (h / def.nativeHeight) * scaleMul;
 
       groups.get(def.key)!.push({
         x,
@@ -119,11 +125,11 @@ export default memo(function OSMTrees({ trees }: OSMTreesProps) {
     }
 
     return groups;
-  }, [trees]);
+  }, [trees, scaleMul, defaultHeight]);
 
   return (
     <group>
-      {KENNEY_TREES.map((def) => {
+      {KAYKIT_TREES.map((def) => {
         const instances = grouped.get(def.key);
         if (!instances || instances.length === 0) return null;
         return (

@@ -1,6 +1,5 @@
 import { useMemo, memo } from 'react';
 import { DoubleSide } from 'three';
-import { EPOCH_A } from '@/constants/epochs';
 import { buildQuayWallGeometry } from '@/systems/quayGeometry';
 import type { SceneWater } from '@/types/osm';
 
@@ -19,7 +18,7 @@ export default memo(function OSMQuayWalls({ waterways }: OSMQuayWallsProps) {
   return (
     <mesh geometry={geometry} receiveShadow>
       <meshLambertMaterial
-        color={EPOCH_A.groundEdge}
+        vertexColors
         flatShading
         side={DoubleSide}
       />

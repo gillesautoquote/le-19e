@@ -5,6 +5,7 @@ export const PLAYER = {
   arrivalThreshold: 0.3,
   keyboardMoveSpeed: 12,
   turboMultiplier: 3,
+  rotationLerpSpeed: 10,
 
   // Body dimensions
   bodyWidth: 0.8,
@@ -21,9 +22,9 @@ export const PLAYER = {
   legY: 0.5,
   legOffsetX: 0.2,
 
-  // Start position — Quai de la Seine, west bank of Bassin de la Villette
+  // Start position — Quai de la Seine, north bank of Bassin de la Villette
   startX: 200,
-  startZ: -150,
+  startZ: -210,
 } as const;
 
 // Click indicator

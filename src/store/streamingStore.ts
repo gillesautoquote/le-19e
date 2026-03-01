@@ -11,7 +11,7 @@ import type {
 
 // ─── Constants ──────────────────────────────────────────────────
 
-const STREAM_RADIUS = 500;
+const STREAM_RADIUS = 300;
 const TILES_BASE_PATH = '/data/tiles';
 const MANIFEST_PATH = '/data/tiles/index.json';
 const UPDATE_THRESHOLD = 30; // meters — don't re-evaluate tiles until player moved this far

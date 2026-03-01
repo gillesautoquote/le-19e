@@ -33,6 +33,8 @@ export const WATER_FRAGMENT = /* glsl */ `
   uniform vec3 uDeepColor;
   uniform float uOpacity;
   uniform vec3 uCameraPosition;
+  uniform vec3 uSkyColor;
+  uniform float uTime;
 
   varying vec3 vWorldPosition;
   varying vec3 vNormal;
@@ -46,11 +48,19 @@ export const WATER_FRAGMENT = /* glsl */ `
     // Mix surface and deep color based on view angle
     vec3 color = mix(uColor, uDeepColor, fresnel * 0.4);
 
-    // Subtle specular highlight from sun direction
-    vec3 sunDir = normalize(vec3(50.0, 80.0, 30.0));
+    // Caustics — moving light patterns on the water surface
+    float caustic = sin(vWorldPosition.x * 0.3 + uTime) * sin(vWorldPosition.z * 0.3 + uTime * 0.7);
+    caustic = pow(abs(caustic), 3.0) * 0.08;
+    color += vec3(1.0, 0.95, 0.85) * caustic;
+
+    // Sky reflection at grazing angles
+    color = mix(color, uSkyColor, fresnel * 0.15);
+
+    // Specular highlight from sun direction (golden hour position)
+    vec3 sunDir = normalize(vec3(80.0, 35.0, 50.0));
     vec3 halfDir = normalize(sunDir + viewDir);
     float specular = pow(max(dot(vNormal, halfDir), 0.0), 64.0);
-    color += vec3(1.0, 0.98, 0.9) * specular * 0.3;
+    color += vec3(1.0, 0.95, 0.8) * specular * 0.4;
 
     gl_FragColor = vec4(color, uOpacity);
   }

@@ -1,48 +1,47 @@
 import { useRef, Suspense } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { Group } from 'three';
-import { EPOCH_A } from '@/constants/epochs';
 import { PLAYER } from '@/constants/player';
 import { usePlayerStore } from '@/store/playerStore';
 import { useCameraStore } from '@/store/cameraStore';
-import { updatePlayerMovement, computeKeyboardMovement } from '@/systems/playerSystem';
-import { getKeys } from '@/systems/inputSystem';
+import { updatePlayerMovement, computeKeyboardMovement, lerpAngle, getSurfaceHeight } from '@/systems/playerSystem';
+import { getKeys, isChatFocused } from '@/systems/inputSystem';
+import { useEditorStore } from '@/store/editorStore';
+import { isHeightmapLoaded } from '@/systems/terrainSystem';
+import { broadcastPosition } from '@/systems/networkSystem';
 import { ModelErrorBoundary } from '@/hooks/useAssets';
 import MixamoCharacter from '@/atoms/MixamoCharacter';
-
-// --- Character visual: procedural fallback ---
-function CharacterProcedural() {
-  return (
-    <group>
-      <mesh position={[0, PLAYER.bodyY, 0]} castShadow>
-        <boxGeometry args={[PLAYER.bodyWidth, PLAYER.bodyHeight, PLAYER.bodyDepth]} />
-        <meshLambertMaterial color={EPOCH_A.playerBody} flatShading />
-      </mesh>
-      <mesh position={[0, PLAYER.headY, 0]} castShadow>
-        <boxGeometry args={[PLAYER.headSize, PLAYER.headSize, PLAYER.headSize]} />
-        <meshLambertMaterial color={EPOCH_A.playerHead} flatShading />
-      </mesh>
-      <mesh position={[-PLAYER.legOffsetX, PLAYER.legY, 0]} castShadow>
-        <boxGeometry args={[PLAYER.legWidth, PLAYER.legHeight, PLAYER.legDepth]} />
-        <meshLambertMaterial color={EPOCH_A.playerLegs} flatShading />
-      </mesh>
-      <mesh position={[PLAYER.legOffsetX, PLAYER.legY, 0]} castShadow>
-        <boxGeometry args={[PLAYER.legWidth, PLAYER.legHeight, PLAYER.legDepth]} />
-        <meshLambertMaterial color={EPOCH_A.playerLegs} flatShading />
-      </mesh>
-    </group>
-  );
-}
-
-// --- Player component (movement logic + visual) ---
+import CharacterProcedural from '@/atoms/CharacterProcedural';
 export default function Player() {
   const groupRef = useRef<Group>(null);
   const walkTimeRef = useRef(0);
   const movingRef = useRef(false);
+  const terrainInitRef = useRef(false);
   const store = usePlayerStore;
 
   useFrame((_, delta) => {
     if (!groupRef.current) return;
+
+    // Snap to terrain height once heightmap is available
+    if (!terrainInitRef.current && isHeightmapLoaded()) {
+      terrainInitRef.current = true;
+      const pos = groupRef.current.position;
+      const y = getSurfaceHeight(pos.x, pos.z);
+      pos.y = y;
+      store.setState({ position: [pos.x, y, pos.z] });
+    }
+
+    // Skip movement input when chat is focused
+    if (isChatFocused()) {
+      movingRef.current = false;
+      return;
+    }
+
+    // Skip movement when editor is active
+    if (useEditorStore.getState().enabled) {
+      movingRef.current = false;
+      return;
+    }
 
     const keys = getKeys();
     const turbo = keys.has('shift');
@@ -56,28 +55,37 @@ export default function Player() {
       turbo
     );
 
-    // Arrow key movement takes priority over click-to-move
+    // WASD/ZQSD/Arrow movement takes priority over click-to-move
     if (kbMove) {
       store.getState().stopMovement();
       movingRef.current = true;
 
       groupRef.current.position.set(kbMove.x, kbMove.y, kbMove.z);
-      groupRef.current.rotation.y = kbMove.rotation;
+      const smoothedRotation = lerpAngle(
+        groupRef.current.rotation.y,
+        kbMove.rotation,
+        delta * PLAYER.rotationLerpSpeed,
+      );
+      groupRef.current.rotation.y = smoothedRotation;
 
       store.setState({
         position: [kbMove.x, kbMove.y, kbMove.z],
-        rotation: kbMove.rotation,
+        rotation: smoothedRotation,
+        isMoving: true,
       });
+      broadcastPosition(kbMove.x, kbMove.z, smoothedRotation, 1);
+      return;
+    }
+
+    // No keyboard input → mark not moving (for auto-follow camera)
+    const { targetPosition } = store.getState();
+    if (!targetPosition) {
+      movingRef.current = false;
+      store.setState({ isMoving: false });
       return;
     }
 
     // Click-to-move fallback
-    const { targetPosition } = store.getState();
-    if (!targetPosition) {
-      movingRef.current = false;
-      return;
-    }
-
     const result = updatePlayerMovement(
       {
         positionX: groupRef.current.position.x,
@@ -95,13 +103,20 @@ export default function Player() {
 
     movingRef.current = !result.arrived;
     groupRef.current.position.set(result.x, result.y, result.z);
-    groupRef.current.rotation.y = result.rotation;
+    const smoothedRot = lerpAngle(
+      groupRef.current.rotation.y,
+      result.rotation,
+      delta * PLAYER.rotationLerpSpeed,
+    );
+    groupRef.current.rotation.y = smoothedRot;
     walkTimeRef.current = result.walkTime;
 
     store.setState({
       position: [result.x, result.y, result.z],
-      rotation: result.rotation,
+      rotation: smoothedRot,
+      isMoving: !result.arrived,
     });
+    broadcastPosition(result.x, result.z, smoothedRot, result.arrived ? 0 : 1);
 
     if (result.arrived) {
       store.getState().stopMovement();

@@ -8,11 +8,13 @@ import {
   createInitialCameraState,
   applyZoom,
   applyOrbit,
-  applyKeyboardRotation,
+  applyKeyboardZoom,
+  applyAutoFollow,
   sphericalToOffset,
   type CameraState,
 } from '@/systems/cameraSystem';
 import { initInput, disposeInput, getKeys } from '@/systems/inputSystem';
+import { useEditorStore } from '@/store/editorStore';
 
 const _target = new Vector3();
 
@@ -21,6 +23,7 @@ export default function CameraRig() {
   const stateRef = useRef<CameraState>(createInitialCameraState());
   const isDraggingRef = useRef(false);
   const lastMouseRef = useRef({ x: 0, y: 0 });
+  const movingTimeRef = useRef(0);
 
   useEffect(() => {
     const canvas = gl.domElement;
@@ -32,6 +35,7 @@ export default function CameraRig() {
 
     const handleMouseDown = (e: MouseEvent) => {
       if (e.button === 2 || e.button === 1) {
+        if (useEditorStore.getState().isDraggingGizmo) return;
         e.preventDefault();
         isDraggingRef.current = true;
         lastMouseRef.current = { x: e.clientX, y: e.clientY };
@@ -113,15 +117,34 @@ export default function CameraRig() {
   }, [gl]);
 
   useFrame((_, delta) => {
-    const pos = usePlayerStore.getState().position;
+    const playerState = usePlayerStore.getState();
+    const pos = playerState.position;
 
-    stateRef.current = applyKeyboardRotation(stateRef.current, delta, getKeys());
+    // Track how long the player has been moving (for auto-follow delay)
+    if (playerState.isMoving) {
+      movingTimeRef.current += delta;
+    } else {
+      movingTimeRef.current = 0;
+    }
+
+    // Keyboard zoom (+/-) and auto-follow behind player
+    // Skip when editor is active to keep camera stable for object manipulation
+    if (!useEditorStore.getState().enabled) {
+      stateRef.current = applyKeyboardZoom(stateRef.current, delta, getKeys());
+      stateRef.current = applyAutoFollow(
+        stateRef.current,
+        playerState.rotation,
+        playerState.isMoving,
+        movingTimeRef.current,
+        delta,
+      );
+    }
 
     const [ox, oy, oz] = sphericalToOffset(stateRef.current);
     _target.set(pos[0] + ox, pos[1] + oy, pos[2] + oz);
 
     camera.position.lerp(_target, CAMERA.followSmoothness);
-    camera.lookAt(pos[0], (pos[1] || 0) + 1, pos[2]);
+    camera.lookAt(pos[0], (pos[1] || 0) + 2, pos[2]);
 
     useCameraStore.getState().updateTheta(stateRef.current.theta);
   });

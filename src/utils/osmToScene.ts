@@ -67,6 +67,7 @@ export function convertToSceneObjects(osmData: OSMData, geojson: GeoJSONCollecti
     points: r.coordinates.map(([lat, lng]) => toScenePos(lat, lng)),
     width: r.width,
     name: r.name,
+    oneway: r.oneway,
   }));
 
   const benches: SceneBench[] = osmData.benches.map((b) => ({

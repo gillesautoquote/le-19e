@@ -2,6 +2,17 @@ import { Vector3, MathUtils } from 'three';
 import { PLAYER } from '@/constants/player';
 import { WORLD } from '@/constants/world';
 import { getTerrainHeight } from '@/systems/terrainSystem';
+import { getRoadSurfaceHeight } from '@/systems/roadTileSystem';
+import { getRoadGradeHeight } from '@/systems/roadGradeSystem';
+
+/** Surface height = max of terrain, road tile surface, and smoothed road grade. */
+export function getSurfaceHeight(x: number, z: number): number {
+  return Math.max(
+    getTerrainHeight(x, z),
+    getRoadSurfaceHeight(x, z),
+    getRoadGradeHeight(x, z),
+  );
+}
 
 interface KeyboardMovementResult {
   x: number;
@@ -46,10 +57,11 @@ export function computeKeyboardMovement(
   let inputForward = 0;
   let inputRight = 0;
 
-  if (keys.has('arrowup')) inputForward += 1;
-  if (keys.has('arrowdown')) inputForward -= 1;
-  if (keys.has('arrowleft')) inputRight -= 1;
-  if (keys.has('arrowright')) inputRight += 1;
+  // WASD (QWERTY) + ZQSD (AZERTY) + arrow keys
+  if (keys.has('arrowup') || keys.has('w') || keys.has('z')) inputForward += 1;
+  if (keys.has('arrowdown') || keys.has('s')) inputForward -= 1;
+  if (keys.has('arrowleft') || keys.has('a') || keys.has('q')) inputRight -= 1;
+  if (keys.has('arrowright') || keys.has('d')) inputRight += 1;
 
   if (inputForward === 0 && inputRight === 0) return null;
 
@@ -71,7 +83,7 @@ export function computeKeyboardMovement(
   const [newX, newZ] = clampTarget(posX + dx * speed * delta, posZ + dz * speed * delta);
   const rotation = Math.atan2(dx, dz);
 
-  return { x: newX, y: getTerrainHeight(newX, newZ), z: newZ, rotation };
+  return { x: newX, y: getSurfaceHeight(newX, newZ), z: newZ, rotation };
 }
 
 export function clampTarget(x: number, z: number): [number, number] {
@@ -95,7 +107,7 @@ export function updatePlayerMovement(
   if (distance < PLAYER.arrivalThreshold) {
     return {
       x: state.positionX,
-      y: getTerrainHeight(state.positionX, state.positionZ),
+      y: getSurfaceHeight(state.positionX, state.positionZ),
       z: state.positionZ,
       rotation: state.rotation,
       isMoving: false,
@@ -113,7 +125,7 @@ export function updatePlayerMovement(
   const newRotation = Math.atan2(_direction.x, _direction.z);
   const newWalkTime = state.walkTime + delta * PLAYER.bobSpeed;
   const bobY = Math.abs(Math.sin(newWalkTime)) * PLAYER.bobAmplitude;
-  const terrainY = getTerrainHeight(newX, newZ);
+  const terrainY = getSurfaceHeight(newX, newZ);
 
   return {
     x: newX,
@@ -124,4 +136,15 @@ export function updatePlayerMovement(
     walkTime: newWalkTime,
     arrived: false,
   };
+}
+
+/**
+ * Interpolate between two angles with shortest-path wrapping.
+ * Handles the -PI/+PI boundary correctly to avoid full-circle spins.
+ */
+export function lerpAngle(current: number, target: number, t: number): number {
+  let diff = target - current;
+  while (diff > Math.PI) diff -= Math.PI * 2;
+  while (diff < -Math.PI) diff += Math.PI * 2;
+  return current + diff * Math.min(t, 1);
 }

@@ -1,13 +1,12 @@
-import { useRef } from 'react';
+import { useRef, useMemo, useEffect } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
-import { useEffect } from 'react';
-import { Color, Fog, Plane, Raycaster, Vector2, Vector3 } from 'three';
+import { Color, Fog } from 'three';
 import { EPOCH_A, EPOCH_B } from '@/constants/epochs';
 import { FOG } from '@/constants/world';
-import { usePlayerStore } from '@/store/playerStore';
 import { useWorldStore } from '@/store/worldStore';
 import { useStreamingData } from '@/hooks/useStreamingData';
-import { getTerrainHeight } from '@/systems/terrainSystem';
+import { buildRoadGrades } from '@/systems/roadGradeSystem';
+import { useClickToMove } from '@/hooks/useClickToMove';
 
 import Lighting from '@/atoms/Lighting';
 import PostProcessing from '@/atoms/PostProcessing';
@@ -16,6 +15,7 @@ import Quay from '@/molecules/Quay';
 import Water from '@/atoms/Water';
 import Player from '@/atoms/Player';
 import CameraRig from '@/organisms/CameraRig';
+import EditorControls from '@/organisms/EditorControls';
 import ClickIndicator from '@/atoms/ClickIndicator';
 import OSMBuildings from '@/organisms/OSMBuildings';
 import OSMTrees from '@/organisms/OSMTrees';
@@ -26,20 +26,32 @@ import OSMPointFeatures from '@/organisms/OSMPointFeatures';
 import OSMAnimatedEntities from '@/organisms/OSMAnimatedEntities';
 import OSMPaths from '@/organisms/OSMPaths';
 import OSMQuayWalls from '@/organisms/OSMQuayWalls';
-
-// Reusable objects for ground click raycasting (avoid allocations)
-const _raycaster = new Raycaster();
-const _mouse = new Vector2();
-const _groundPlane = new Plane(new Vector3(0, 1, 0), 0);
-const _hitPoint = new Vector3();
+import OSMBushes from '@/organisms/OSMBushes';
+import OSMRocks from '@/organisms/OSMRocks';
+import OSMStaticCars from '@/organisms/OSMStaticCars';
+import OSMUrbanDetails from '@/organisms/OSMUrbanDetails';
+import OSMParkTiles from '@/organisms/OSMParkTiles';
+import Terrain from '@/atoms/Terrain';
+import LampLights from '@/atoms/LampLights';
+import FadeGroup from '@/atoms/FadeGroup';
+import GrassPatches from '@/atoms/GrassPatches';
+import RemotePlayers from '@/organisms/RemotePlayers';
+import DebugRoadOverlay from '@/organisms/DebugRoadOverlay';
 
 export default function CanalOurcq() {
-  const { scene, camera, gl } = useThree();
+  const { scene } = useThree();
   const clickIndicatorRef = useRef<{ position: [number, number, number]; time: number } | null>(null);
   const fogColorRef = useRef(new Color(EPOCH_A.fog));
+  const targetFogColorRef = useRef(new Color(EPOCH_A.fog));
+  const targetSkyColorRef = useRef(new Color(EPOCH_A.sky));
 
   // Stream real OSM data (tiles loaded dynamically around player)
   const osmData = useStreamingData();
+
+  // Pre-compute smooth road grades (must precede road tile/ribbon consumers)
+  useMemo(() => {
+    if (osmData.roads.length > 0) buildRoadGrades(osmData.roads);
+  }, [osmData.roads]);
 
   // Initialize scene fog (linear Fog for ~150m clear visibility)
   useEffect(() => {
@@ -51,45 +63,22 @@ export default function CanalOurcq() {
   useFrame((_, delta) => {
     const epoch = useWorldStore.getState().epoch;
     const palette = epoch === 'A' ? EPOCH_A : EPOCH_B;
-    const targetFogColor = new Color(palette.fog);
-    const targetSkyColor = new Color(palette.sky);
+    targetFogColorRef.current.set(palette.fog);
+    targetSkyColorRef.current.set(palette.sky);
 
-    fogColorRef.current.lerp(targetFogColor, delta * FOG.transitionSpeed);
+    fogColorRef.current.lerp(targetFogColorRef.current, delta * FOG.transitionSpeed);
 
     if (scene.fog instanceof Fog) {
       scene.fog.color.copy(fogColorRef.current);
     }
 
     if (scene.background instanceof Color) {
-      scene.background.lerp(targetSkyColor, delta * FOG.transitionSpeed);
+      scene.background.lerp(targetSkyColorRef.current, delta * FOG.transitionSpeed);
     }
   });
 
-  // Click-to-move: listen on canvas parent (R3F event source) → ray/plane Y=0
-  useEffect(() => {
-    const target = gl.domElement.parentElement ?? gl.domElement;
-
-    const handlePointerDown = (e: PointerEvent) => {
-      if (e.button !== 0) return; // left-click only
-
-      const rect = target.getBoundingClientRect();
-      _mouse.set(
-        ((e.clientX - rect.left) / rect.width) * 2 - 1,
-        -((e.clientY - rect.top) / rect.height) * 2 + 1,
-      );
-      _raycaster.setFromCamera(_mouse, camera);
-
-      const hit = _raycaster.ray.intersectPlane(_groundPlane, _hitPoint);
-      if (hit) {
-        const { x, z } = _hitPoint;
-        usePlayerStore.getState().setTargetPosition([x, 0, z]);
-        clickIndicatorRef.current = { position: [x, getTerrainHeight(x, z) + 0.05, z], time: Date.now() };
-      }
-    };
-
-    target.addEventListener('pointerdown', handlePointerDown);
-    return () => target.removeEventListener('pointerdown', handlePointerDown);
-  }, [camera, gl]);
+  // Click-to-move
+  useClickToMove(clickIndicatorRef);
 
   return (
     <>
@@ -102,18 +91,28 @@ export default function CanalOurcq() {
       {/* Post-processing effects */}
       <PostProcessing />
 
+      {/* Ground terrain */}
+      <Terrain waterways={osmData.waterways} />
+
       {/* World */}
-      <Quay />
+      <Quay waterways={osmData.waterways} roadCount={osmData.roads.length} />
       <Water waterways={osmData.waterways} />
       <OSMQuayWalls waterways={osmData.waterways} />
 
-      {/* OSM data → real geometry */}
-      <OSMParks parks={osmData.parks} />
-      <OSMRoads roads={osmData.roads} />
-      <OSMBuildings buildings={osmData.buildings} />
-      <OSMTrees trees={osmData.trees} />
+      {/* OSM data → real geometry (fade-in on tile load) */}
+      <FadeGroup dataVersion={osmData.parks.length}><OSMParks parks={osmData.parks} /></FadeGroup>
+      <OSMParkTiles parks={osmData.parks} />
+      <FadeGroup dataVersion={osmData.roads.length}><OSMRoads roads={osmData.roads} /></FadeGroup>
+      <FadeGroup dataVersion={osmData.buildings.length}><OSMBuildings buildings={osmData.buildings} /></FadeGroup>
+      <FadeGroup dataVersion={osmData.trees.length}><OSMTrees trees={osmData.trees} /></FadeGroup>
+      <OSMBushes parks={osmData.parks} />
+      <GrassPatches parks={osmData.parks} />
+      <OSMRocks parks={osmData.parks} waterways={osmData.waterways} />
+      <OSMStaticCars roads={osmData.roads} />
+      <OSMUrbanDetails roads={osmData.roads} />
       <OSMFurniture benches={osmData.benches} lamps={osmData.lamps} />
-      <OSMAnimatedEntities roads={osmData.roads} waterways={osmData.waterways} />
+      <LampLights lamps={osmData.lamps} />
+      <OSMAnimatedEntities roads={osmData.roads} waterways={osmData.waterways} trees={osmData.trees} />
       <OSMPaths roads={osmData.roads} />
       <OSMPointFeatures
         fountains={osmData.fountains}
@@ -126,12 +125,19 @@ export default function CanalOurcq() {
         wasteBins={osmData.wasteBins}
       />
 
+      {/* Debug overlay */}
+      <DebugRoadOverlay roads={osmData.roads} />
+
       {/* Player */}
       <Player />
       <ClickIndicator indicatorRef={clickIndicatorRef} />
+      <RemotePlayers />
 
       {/* Camera */}
       <CameraRig />
+
+      {/* Editor (dev only) */}
+      <EditorControls />
     </>
   );
 }

@@ -6,6 +6,17 @@ export interface RouteSegment {
   segmentLengths: number[];       // length of each sub-segment
   cumulativeLengths: number[];    // cumulative distance at each point index
   width: number;                  // route width (meters) — used for side offset
+  oneway: boolean;                // true = one-way street
+}
+
+export interface RouteConnection {
+  targetRoute: number;            // index into routes array
+  enterAtStart: boolean;          // true = progress=0 dir=1, false = progress=end dir=-1
+}
+
+export interface RouteEndpoints {
+  atStart: RouteConnection[];     // connections reachable from route start
+  atEnd: RouteConnection[];       // connections reachable from route end
 }
 
 // ─── Animated entity types ──────────────────────────────────────
@@ -16,6 +27,7 @@ export interface AnimatedCar {
   speed: number;                  // m/s (5-8)
   direction: 1 | -1;             // forward or backward along polyline
   variantIndex: number;           // index into KENNEY_CARS
+  laneOffset: number;             // perpendicular offset from centerline (meters)
   alive: boolean;                 // false = ready for respawn
   x: number;
   z: number;
@@ -64,4 +76,52 @@ export interface AnimatedPedestrian {
   rotationY: number;
   leftLegAngle: number;
   rightLegAngle: number;
+}
+
+// ─── Falling leaves ─────────────────────────────────────────────
+
+export interface FallingLeaf {
+  anchorX: number;                // tree trunk world X (absolute)
+  anchorZ: number;                // tree trunk world Z (absolute)
+  spawnY: number;                 // world Y at spawn
+  fallSpeed: number;              // m/s downward
+  wobbleFreq: number;             // Hz lateral sinusoid
+  wobblePhaseX: number;           // phase offset X
+  wobblePhaseZ: number;           // phase offset Z
+  spinSpeed: number;              // rad/s tumble
+  spinPhase: number;              // starting rotation
+  colorVariant: number;           // 0-5 index into leaf colors
+  worldX: number;                 // current world position
+  worldY: number;
+  worldZ: number;
+  localTime: number;              // seconds since spawn/reset
+  rotationY: number;
+  rotationZ: number;
+}
+
+// ─── Ground pigeons ─────────────────────────────────────────────
+
+export type PigeonState = 'pecking' | 'scattering' | 'gone';
+
+export interface Pigeon {
+  localX: number;                 // position relative to group center
+  localZ: number;
+  wanderAngle: number;            // current wander direction
+  wanderTimer: number;            // seconds until next wander change
+  peckPhase: number;              // phase for head bob
+  wingPhase: number;              // phase for wing flap
+  wingAngle: number;              // current wing rotation
+  headY: number;                  // current head Y offset (peck bob)
+  scatterVX: number;              // X velocity during scatter
+  scatterVZ: number;              // Z velocity during scatter
+  scatterVY: number;              // Y velocity during scatter (upward)
+}
+
+export interface PigeonGroup {
+  centerX: number;                // world position of group center
+  centerZ: number;
+  state: PigeonState;
+  stateTimer: number;             // seconds in current state
+  pigeons: Pigeon[];
+  groundY: number;                // terrain height at group center
 }
